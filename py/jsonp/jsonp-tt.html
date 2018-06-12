@@ -1,0 +1,36 @@
+<!DOCTYPE html> 
+<html>
+<head>
+	<title>启动页</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://apps.bdimg.com/libs/jquerymobile/1.4.5/jquery.mobile-1.4.5.min.css">
+	<script src="https://apps.bdimg.com/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="https://apps.bdimg.com/libs/jquerymobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	<script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.js"></script>
+<script  type="text/javascript">
+$(document).ready($(function(){
+		
+    $('#search').click(function () {
+        $.ajax({
+            type: 'GET',
+            url: 'http://192.168.1.107:7777/test_post/aa',
+            dataType: 'jsonp', //希望服务器返回json格式的数据
+            jsonp: "callback",
+            jsonpCallback: "successCallback",//回调方法
+            success: function (data) {
+            	//alert(data["total"]);
+                console.log(data);
+            }
+
+        });
+    });
+}))
+</script>
+			
+</head>
+
+<body>
+
+<button class="ui-btn ui-corner-all" id="search">发送Jsonp请求</button>
+</body>
+</html>

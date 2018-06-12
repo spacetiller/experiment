@@ -1,0 +1,5 @@
+Wed, 22 Nov 2017 11:14:40 <stdin>[line:1] INFO This is info message
+Wed, 22 Nov 2017 11:15:22 <stdin>[line:1] DEBUG This is debug message
+Wed, 22 Nov 2017 11:15:30 <stdin>[line:1] WARNING This is www message
+Wed, 22 Nov 2017 11:15:33 <stdin>[line:1] WARNING This is www message
+Wed, 22 Nov 2017 11:15:34 <stdin>[line:1] WARNING This is www message
