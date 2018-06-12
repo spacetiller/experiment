@@ -1,0 +1,9 @@
+# dirs
+/data/
+/dm/
+/node_modules/
+/logs/
+
+# files
+*.tar.gz
+*.exe
