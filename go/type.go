@@ -12,8 +12,19 @@ var e, f = 123, "hello"
 //这种不带声明格式的只能在函数体中出现
 //g, h := 123, "hello"
 
+const (
+	i = 1 << iota
+	j = 3 << iota
+	k
+	l
+)
+
 func main() {
 	g, h := 123, "hello"
-	println(x, y, a, b, c, d, e, f, g, h)
+	c++
+	var m = c + 2
+	var p *int = &c
+
+	println(x, y, a, b, c, d, e, f, g, h, l, m, *p)
 	println(&x, &g)
 }
