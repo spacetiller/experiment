@@ -7,7 +7,7 @@ func main() {
 	for i := 0; i < 10; i++ {
 		fmt.Printf("%d\t", fibonacci(i))
 	}
-	fmt.Println('\a')
+	fmt.Println()
 }
 func fibonacci(i int) int {
 	if i < 2 {
