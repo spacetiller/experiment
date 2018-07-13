@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-var N int = 100
+var N int = 10
 
 func Task(i int) {
 	fmt.Println("Box", i)
@@ -18,5 +18,6 @@ func main() {
 
 	for i := 0; i < N; i++ {
 		<-ack // Point #2
+		//fmt.Println(i, a)
 	}
 }
