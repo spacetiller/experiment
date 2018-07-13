@@ -9,6 +9,9 @@ func main() {
 	i := <-c
 	fmt.Println(i)
 
-	c2 chan int
-	i <-c2
+	c2 := make(chan int)
+	c2 <- 10
+	j := <-c2
+	fmt.Println(j)
+	close(c2)
 }
