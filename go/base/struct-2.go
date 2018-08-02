@@ -10,8 +10,8 @@ type Books struct {
 }
 
 func main() {
-	var Book1 Books /* 声明 Book1 为 Books 类型 */
-	var Book2 Books /* 声明 Book2 为 Books 类型 */
+	var Book1 Books   /* 声明 Book1 为 Books 类型 */
+	Book2 := &Books{} /* 声明 Book2 为 Books 类型 */
 
 	/* book 1 描述 */
 	Book1.title = "Go 语言"
@@ -29,7 +29,7 @@ func main() {
 	printBook(Book1)
 
 	/* 打印 Book2 信息 */
-	printBook(Book2)
+	printBook(*Book2)
 }
 
 func printBook(book Books) {
