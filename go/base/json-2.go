@@ -21,5 +21,6 @@ func main() {
     p.Price = 2499.00
     p.ProductID = 1
     data, _ := json.Marshal(p)
+    fmt.Println("String(json) result:")
     fmt.Println(string(data))
 }
