@@ -6,11 +6,11 @@ import (
 
 // Product 商品信息
 type Product struct {
-    Name      string
-    ProductID int64
-    Number    int
-    Price     float64
-    IsOnSale  bool
+    Name      string `json:"name"`
+    ProductID int64 `json:"product_id"`
+    Number    int `json:"number"`
+    Price     float64 `json:"price"`
+    IsOnSale  bool `json:"is_on_sale"`
 }
 
 func main() {
