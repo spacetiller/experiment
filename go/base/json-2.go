@@ -7,7 +7,7 @@ import (
 // Product 商品信息
 type Product struct {
     Name      string `json:"name"`
-    ProductID int64 `json:"product_id"`
+    ProductID int64 `json:"product_id,omitempty"`  // no blank before omitempty
     Number    int `json:"number"`
     Price     float64 `json:"price"`
     IsOnSale  bool `json:"is_on_sale"`
@@ -19,7 +19,7 @@ func main() {
     p.IsOnSale = true
     p.Number = 10000
     p.Price = 2499.00
-    p.ProductID = 1
+    p.ProductID = 0
     data, _ := json.Marshal(p)
     fmt.Println("String(json) result:")
     fmt.Println(string(data))
