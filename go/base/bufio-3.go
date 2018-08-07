@@ -50,6 +50,7 @@ func main() {
     w := bufio.NewWriter(f)
     n4, err := w.WriteString("buffered\n")
     fmt.Printf("wrote %d bytes\n", n4)
+	fmt.Printf("err msg: %s\n", err)
 
     // Use `Flush` to ensure all buffered operations have
     // been applied to the underlying writer.
