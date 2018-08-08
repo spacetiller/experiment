@@ -2,9 +2,15 @@ package main
 
 import (
     "fmt"
-//    "strconv"
+    "strconv"
     "strings"
 )
+
+func checkError(e error) {
+    if e != nil {
+        fmt.Println(e)
+    }
+}
 
 func main(){
 	fmt.Println(strings.Contains("seafood","foo"))
@@ -26,5 +32,25 @@ func main(){
 
 	fmt.Printf("Fields are: %q\n", strings.Fields("  foo bar  baz   "))
 
+	str := make([]byte, 0, 100)
+	str = strconv.AppendInt(str, 4567, 10) //以10进制方式追加
+	fmt.Println(str)
 
+    x := strconv.FormatBool(false)
+    y := strconv.FormatInt(1234, 10)
+    z := strconv.FormatUint(12345, 10)
+    w := strconv.Itoa(1023)
+    fmt.Println(x, y, z, w) //false 1234 12345 1023
+
+    a, err := strconv.ParseBool("false")
+    checkError(err)
+    b, err := strconv.ParseFloat("123.23", 64)
+    checkError(err)
+    c, err := strconv.ParseInt("1234", 10, 64)
+    checkError(err)
+    d, err := strconv.ParseUint("12345", 10, 64)
+    checkError(err)
+    e, err := strconv.Atoi("1023")
+    checkError(err)
+    fmt.Println(a, b, c, d, e) //false 123.23 1234 12345 1023	
 }
