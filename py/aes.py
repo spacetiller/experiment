@@ -35,6 +35,6 @@ if __name__ == '__main__':
     e = pc.encrypt("0123456789ABCDEF")
     d = pc.decrypt(e)                     
     print e, d
-    e = pc.encrypt("00000000000000000000000000")
+    e = pc.encrypt("0123456789ABCDEF0123456789ABCDEF")
     d = pc.decrypt(e)                  
     print e, d
