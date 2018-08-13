@@ -11,7 +11,7 @@ func gcd(a int, b int) int{
 	}else{
 		//g := gcd(b, int(math.Mod(a,b)))
 		r := a%b
-		fmt.Println(r)
+		//fmt.Println(r)
 		g := gcd(b, r)
 		return g
 	}
@@ -24,5 +24,4 @@ func main() {
 	
 	var a,n int = 10,15
 	fmt.Printf("GCD of %d and %d: %d\n", a, n, gcd(a,n))
-
 }
