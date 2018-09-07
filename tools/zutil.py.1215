@@ -1,0 +1,1683 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
+import sys
+import re
+import datetime
+import time
+import math
+import inspect
+#import traceback
+
+# int = checkVcode(vcode) # 0,1,2,3,4
+# vcode = reviseVcode(vin_code):
+# int = vin2year(char)
+# int = modelClean(amodel) # 0,1,2,3,4
+# model = modelCheck(model)
+# model = modelCheckWithVin(model,vcode)
+# type,total = getTypeWeightFromModel(model,totalf,totalw)
+# type = getTypeFromModel(model)
+# model = modelReviseCA(mdl, vtype='')
+# ...
+# model = modelReviseBJ(mdl, vtype='')
+# model = modelRevise(model)
+# drive = _get_drive_from_model_bj(model,special_code_dict = {})
+# ...
+# drive = _get_drive_from_model_zz(model,special_code_dict = {})
+# drive = _get_drive_from_vin_ca(vcode)
+# ...
+# drive = _get_drive_from_vin_zz(vcode)
+# drive = getDrive(model,vcode = '',axis = 0, tires = 0):
+# brand = getBrand(model,vcode = '',axis = 0, tires = 0):
+# ftype = get_fuel_type(model, emodel = '', vcode = '', vmodel = -1, vvin = -1)
+# etype = get_emission_type(model, emodel = '', vcode = '', vmodel = -1, vvin = -1)
+
+#drive_info_file = file("vehicle-drive-mode.dic","r")
+#lines = drive_info_file.readlines()
+#drive_dict = {}
+#for line in lines:
+#	line = line.strip()
+#	seq = line.split(",")
+#	if len(seq) != 3:
+#		continue
+#	if seq[0] not in drive_dict:
+#		drive_dict[seq[0]] = seq[2]
+##print "drive dict len: %d" % len(drive_dict)
+#
+#special_code_file = file("vehicle-special-code.dic","r")
+#lines = special_code_file.readlines()
+#special_code_dict = {}
+#for line in lines:
+#	line = line.strip()
+#	seq = line.split(",")
+#	if len(seq) != 2:
+#		continue
+#	if seq[0] not in special_code_dict:
+#		special_code_dict[seq[0]] = seq[1]
+
+# DEBUG layer: 1 - Critical, 2 - Urgent, 3 - Important, 4 - Debug , 5 - Info, 6 - Env, 7 - Trivial, above - no debug
+# Only 0, 4 and 10 Used Here !!!
+_Z_DEBUG_LEVEL = 0
+_Z_DEBUG_CRTITICAL = 1
+_Z_DEBUG_URGENT = 2
+_Z_DEBUG_IMPORTANT = 3
+_Z_DEBUG_DEBUG = 4
+def _function_enter(debug = 100):
+	if debug <= _Z_DEBUG_LEVEL:
+		fname = sys._getframe().f_code.co_filename
+		#fcname = sys._getframe().f_code.co_name
+		fcname = inspect.stack()[1][3]
+		#print str(time.time()) + ' Enter function : ------ ' + fname + '->' + fcname + '-----'
+		print '%.6f Enter function : ------ %s->%s-----' % (time.time(), fname, fcname)
+	return
+def _function_exit(debug = 100):
+	if debug <= _Z_DEBUG_LEVEL:
+		fname = sys._getframe().f_code.co_filename
+		#fcname = sys._getframe().f_code.co_name
+		fcname = inspect.stack()[1][3]
+		#print str(time.time()) + ' Exit function : ------ ' + fcname + '-----'
+		print '%.6f Exit function : ------ %s -----' % (time.time(), fcname)
+	return
+def _debug(msg,debug=100):
+	if debug <= _Z_DEBUG_LEVEL:
+		print msg
+	return
+#
+# Function to check if a vin code is right.
+# Param: vin code string
+# Return: 0 - right, 1 - wrong length, 2 - containing I/O/Q or other incorrect char(like chinese char), 3 - empty vcode or '其他', 4 - wrong check digit 5 - other error
+#
+def checkVcode(vcode):
+	vcode = vcode.upper()
+	values = {'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'A':1,'B':2,'C':3,'D':4,'E':5,'F':6,'G':7,'H':8,'J':1,'K':2,'L':3,'M':4,'N':5,'P':7,'R':9,'S':2,'T':3,'U':4,'V':5,'W':6,'X':7,'Y':8,'Z':9}
+	weights = {1:8,2:7,3:6,4:5,5:4,6:3,7:2,8:10,9:0,10:9,11:8,12:7,13:6,14:5,15:4,16:3,17:2}
+	vlen = len(vcode)
+	if vlen == 0 :
+		return 3
+	if vcode == '其他': # move to 3 from 2, @zhanghui, 20160907
+		return 3 
+	if vlen == 8 or vlen == 5: # to do
+		return 0
+	if vlen != 17 and vlen != 5 and vlen != 8:
+		return 1
+	sum = 0
+	cc = ''
+	cc9 = vcode[8]
+	for i in range(17):
+		vchar = vcode[i] #.upper()
+		if vchar not in values:
+			return 2
+		j = i+1
+		if j not in weights:
+			return 31
+		sum = sum + values[vchar]*weights[j]
+	cc = str(sum % 11)
+	if cc == '10':
+		cc = 'X'
+	if cc == cc9:
+		#if vcode[0:1] != 'L' and vcode[0:1] != 'W' and vcode[0:1] != 'J':
+		#	return 5
+		return 0
+	else:
+		return 4
+
+def checkVcode17(vcode):
+	if checkVcode(vcode) == 0 and len(vcode)== 17:
+		return 0
+	else:
+		return 1
+
+#
+# Function: revise vin code
+# Param: vin code
+# Return: vin code, rd(revised flag: 0: no change, 1: revised correctly, 2: error)
+#
+def reviseVcode(vin_code, max_valid_vin, valid_vincode = -1, loop_layer = 0):
+	_function_enter(_Z_DEBUG_DEBUG)
+	vcode = vin_code.strip().upper()
+	vcode_out = vcode
+	vl = len(vcode)
+	rd = 0
+	rdd = 0 # next level rd flag, not usful
+	valid_vin = valid_vincode
+	layer = loop_layer
+
+	if max_valid_vin == '':
+		return vcode,rd
+	
+	# todo, only 1 layer now.
+	_debug('layer: ' + str(layer),_Z_DEBUG_DEBUG)
+	if layer > 10:
+		_function_exit(_Z_DEBUG_DEBUG)
+		return vcode_out,rd
+	
+	if valid_vin == -1:
+		valid_vin = checkVcode(vcode)
+	
+	orig_char = ['6','C','G','G','B','8','0','8','0','B','E','S','5','Z','2','D','0','K','N'] # wrong char
+	mod_char  = ['0','G','C','6','8','B','8','0','B','0','B','5','S','2','Z','0','D','M','M'] # right char 
+	ioq_char = ['I','O','Q']
+	rev_char  = ['1','0','0']
+	
+	# 1 use cc-model-vin to find 1st part of vcode
+	if valid_vin == 0:
+		#return vcode
+		pass
+	elif vl == 18:
+		_debug('vl == 18: ' ,_Z_DEBUG_DEBUG)
+		for i in range(0,vl):
+			#vcode_181 = vcode.replace(vcode[i],'')
+			vcode_181 = vcode[:i] + vcode[i+1:]
+			_debug('candidate vcode:  ' + vcode_181 ,_Z_DEBUG_DEBUG)
+			res181 = checkVcode(vcode_181) # delete 1 char
+			if res181 == 0 and vcode_181[:8] in max_valid_vin:
+				_debug('candidate ok, return! ' ,_Z_DEBUG_DEBUG)
+				vcode_out = vcode_181
+				rd = 1
+				return vcode_out,rd
+			#else:
+			#	_debug('candidate ok, return! ' ,_Z_DEBUG_DEBUG)
+			#	vcode_181_r,rdd = reviseVcode(vcode_181,res181)
+			#	if checkVcode(vcode_181_r) == 0:
+			#		vcode_out = vcode_181_r
+			#		rd = 1
+	elif vl != 17:
+		pass
+	elif valid_vin == 4:
+		_debug('valid_vin = 4:  ' ,_Z_DEBUG_DEBUG)
+		cl = len(orig_char)
+		for i in range(0,cl):
+			co = orig_char[i]
+			cm = mod_char[i]
+			cidx = vcode.find(co)
+		#	print 'co: ' + co
+			if cidx >= 0:
+				j = cidx
+				while j >= 0:
+					vcodeC = vcode[:j] + cm + vcode[j+1:]
+					_debug('candidate vcode:  ' + vcodeC ,_Z_DEBUG_DEBUG)
+					#print 'j: ' + str(j) + ' ' + vcodeC
+					res401 =  checkVcode(vcodeC)
+					if res401 == 0 and vcodeC[:8] in max_valid_vin:
+						_debug('candidate ok, return! ' ,_Z_DEBUG_DEBUG)
+						vcode_out = vcodeC
+						rd = 1
+						_function_exit(_Z_DEBUG_DEBUG)
+						return vcode_out,rd
+					j = vcode.find(co,j+1,-1)
+
+	elif valid_vin == 3 or valid_vin == 1:
+		#return vcode
+		_debug('valid_vin = 1/3:  ' ,_Z_DEBUG_DEBUG)
+		pass
+	elif valid_vin == 2:
+		_debug('valid_vin = 2:  ' ,_Z_DEBUG_DEBUG)
+		if vcode == '其他':
+			pass
+		for i in range(0,3):
+			if vcode.find(ioq_char[i]) >= 0:
+				vcodeQ = vcode.replace(ioq_char[i],rev_char[i])
+				_debug('candidate vcode:  ' + vcodeQ ,_Z_DEBUG_DEBUG)
+				resQ = checkVcode(vcodeQ)
+				if resQ == 0 and vcodeQ[:8] in max_valid_vin:
+					_debug('candidate ok, return! ' ,_Z_DEBUG_DEBUG)
+					vcode_out = vcodeQ
+					rd = 1
+					_function_exit(_Z_DEBUG_DEBUG)
+					return vcode_out,rd
+				#else:
+				#	vcodeQ_r,rdd = reviseVcode(vcodeQ,resQ)
+				#	vcode_out = vcodeQ_r
+				#	rd = rdd
+					#if checkVcode(vcodeQ_r) == 0:
+					#	vcode_out = vcodeQ_r
+					#	rd = 1
+		
+
+	_function_exit(_Z_DEBUG_DEBUG)
+	return vcode_out,rd
+
+def vin2year(char):
+	if len(char) != 1:
+		return '1112'
+	vasc = ord(char.upper())
+	thisyear = int(datetime.datetime.now().strftime("%Y"))
+	if vasc in range(49,58):	# 1-9 
+	#   vyr = '200' + str(char)
+		vyr = 2031 + (vasc - 49) 
+		if vyr  > thisyear:
+			vyr = vyr - 30
+		vyear = str(vyr)
+	elif vasc in range(65,73): # A-H
+		vyr = 2010 + (vasc - 65) 
+		if vyr  > thisyear:
+			vyr = vyr - 30
+		vyear = str(vyr)
+	elif vasc in range(74,79): # J-N
+		vyr = 2018 + (vasc - 74) 
+		if vyr  > thisyear:
+			vyr = vyr - 30
+		vyear = str(vyr)
+	elif vasc == 80: # P 
+		vyr = 2023
+		if vyr  > thisyear:
+			vyr = vyr - 30
+		vyear = str(vyr)
+	elif vasc in range(82,85): # R-T
+		vyr = 2024 + (vasc - 82)
+		if vyr  > thisyear:
+			vyr = vyr - 30
+		vyear = str(vyr)
+	elif vasc in range(86,90): # V-Y
+		vyr = 2027 + (vasc - 86)
+		if vyr  > thisyear:
+			vyr = vyr - 30
+		vyear = str(vyr)
+	else:
+	#   print "Wrong char found: " + char
+		vyear = '1111'
+	return vyear
+
+# deprecated
+def modelCheckLoose(model):
+	mdl = model.upper()
+	if len(mdl) ==  0:  
+		return 3
+	if mdl == '其他' or len(mdl) < 7 : 
+		return 3
+	if re.match('[\u4e00-\u9fa5]+',mdl) == None:
+		return 1
+	while re.match('[\u4e00-\u9fa5]+',mdl) == None:
+		mdl = mdl[3:]
+	#	if mdl == '':
+	#		mdl = '-'
+	#		break
+	if len(mdl) < 5 and mdl.isdigit():
+		return 3
+	m = mdl[1:2]
+	if m.isdigit() and re.match('[0-9]'+m+m+'+',mdl) != None:
+		return 3
+	if re.match('[A-Z]{2}[A-Z]?[1345][0-9]{3}[A-Z]+',mdl) == None:
+		return 4
+	else:
+		return 0 
+
+#
+# Function to check if a model is right
+# Param: model string
+# Return: 0 - right, 1 - containing Hanzi except '其他', 2 - containing other incorrect char, 
+#		  3 - empty, or '其他', or less than 5 digits, or after removing Hanzi, left %11111% or %10000%
+#		  4 - wrong format
+#
+def modelCheck(model): # deprecated
+	mdl = model.upper()
+	if len(mdl) ==  0:  
+		return 3
+	if mdl == '其他' or (len(mdl) < 5  and mdl.isdigit()):
+		return 3
+	if mdl.find('_') >= 0 or mdl.find('—') >= 0:
+		return 2
+	if re.match('[\u4e00-\u9fa5]+',mdl) == None:
+		return 1
+	while re.match('[\u4e00-\u9fa5]+',mdl) == None:
+		mdl = mdl[3:]
+		if mdl == '':
+			mdl = '-'
+			break
+	if len(mdl) < 5 and mdl.isdigit():
+		return 3
+	m = mdl[1:2]
+	if m.isdigit() and re.match('[0-9]'+m+m+'+',mdl) != None:
+		return 3
+	if re.match('[A-Z]{2}[A-Z]?[1345][0-9]{3}[A-Z0-9]+',mdl) == None:
+		return 4
+	else:
+		return 0 
+
+# Function to clean a vehicle model, remove Hanzi and some incorrect chars
+def modelClean(amodel):
+	mdl = amodel.upper()
+	if len(mdl) == 0:
+		return '-' #mdl
+	while re.match('[\u4e00-\u9fa5]+',mdl) == None:
+		mdl = mdl[3:]
+		if mdl == '':
+			mdl = '-'
+			break
+	mdl = mdl.replace('—','-')
+	mdl = mdl.replace('－','-')
+	mdl = mdl.replace('__','-')
+	mdl = mdl.replace('_','-')
+	if len(mdl) == 0:
+		return '-' #mdl
+	return mdl
+
+
+#
+# Function to check if a model is right
+# Param: model string
+# Return: 0 - right, 1 - containing Hanzi except '其他', 2 - containing other incorrect char, 
+#		  3 - empty, or '其他', or less than 5 digits, or after removing Hanzi, left %11111% or %10000%
+#		  4 - wrong format
+#
+def modelCheckWithVin(model,vcode=''):
+	_function_enter(_Z_DEBUG_DEBUG)
+	mdl = model.upper()
+	_debug('mdl: ' + str(mdl), _Z_DEBUG_DEBUG)
+	if len(mdl) ==  0:  
+		return 3
+	if mdl == '其他' : #or (len(mdl) < 5  and mdl.isdigit()):
+		return 3
+	if mdl.find('_') >= 0 or mdl.find('—') >= 0:
+		return 2
+	if re.match('[\u4e00-\u9fa5]+',mdl) == None:
+		return 1
+	while re.match('[\u4e00-\u9fa5]+',mdl) == None:
+		mdl = mdl[3:]
+		if mdl == '':
+			mdl = '-'
+			break
+	m = mdl[1:2]
+	if m.isdigit() and re.match('[0-9]'+m+m+'+',mdl) != None:
+		return 3
+	if vcode != '' and vcode[0] != 'L' :
+		if checkVcode(vcode) == 0 and ( mdl[0:2] in ['7Y','40','WD','9B','3C','YS','1F','1H','1N','1X','2L','1M','75'] or re.match('[0-9]{3}CC',mdl) != None ) :
+			return 0
+	else:
+		if re.match('[A-Z]{2}[A-Z]?[1345][0-9]{3}[A-Z][0-9A-Z]+',mdl) == None:
+			return 4
+		else:
+			return 0 
+	return 0
+
+# revise total weight/force
+def _revise_total_weight(t,model='',vcode=''):
+	total = t
+	v = 'L'
+	if vcode != '':
+		v = vcode[0:1].upper()
+	if v != 'L':
+		return total
+	if total > 500000:
+		total = '0.0' 
+	elif total > 50000:
+		total = total / 10
+	return total
+
+# return type,total
+def getTypeWeightFromModel(model,totalf,totalw,vcode=''):
+	if 1: #modelCheck(model) == 0:
+		#print 'right model: %s' % model
+		if re.match('[A-Z][A-Z][0-9][0-9][0-9][0-9]+',model) != None:
+			t = model[2:3]
+			total = model[3:5]
+		elif  re.match('[A-Z][A-Z][A-Z][0-9][0-9][0-9][0-9]+',model) != None:
+			t = model[3:4]
+			total = model[4:6]
+		else:
+			t = '-1'
+			try:
+				totalw = float(totalw)
+			except:
+				try:
+					totalf = float(totalf)
+				except:
+					total = '0.0'
+				else:
+					total = totalf 
+			else:
+				total = totalw
+			return t,total
+		t = int(t)
+		total = float(total)
+		total *= 1000
+		total = _revise_total_weight(total,model,vcode)
+		#print 'type: %d, total: %f' %(t,total)
+		if t == 4:
+			#print 'is 4 %f,%s,%s' %(total,totalf,totalw)
+			try:
+				totalf = float(totalf)
+			except:
+				total = float(total)
+			else:
+				totalf = _revise_total_weight(totalf,model,vcode)
+				total = max(totalf,total)
+		elif t > 0:
+			total = total
+			#print 'is not 4'
+			#try:
+			#	totalw = float(totalw)
+			#except:
+			#	total = float(total)
+			#else:
+			#	total = max(totalw,total)
+		return t,total
+
+# return type: -1: error, 1~9
+def getTypeFromModel(model):
+	if model != '' and modelCheck(model) == 0:
+		#print 'right model: %s' % model
+		if re.match('[A-Z]{2}[0-9]{4}[A-Z0-9]+',model) != None:
+			t = model[2:3]
+		elif  re.match('[A-Z]{3}[0-9]{4}[A-Z0-9]+',model) != None:
+			t = model[3:4]
+		else:
+			t = '-1'
+		t = int(t)
+		#print 'type: %d, total: %f' %(t,total)
+		return t
+	else:
+		return -1
+
+def vague_C2N(char):
+	if char == 'D':
+		n = '0' 
+	elif char == 'O':
+		n = '0' 
+	elif char == 'Q':
+		n = '0' 
+	elif char == 'J':
+		n = '1' 
+	elif char == 'L':
+		n = '1' 
+	elif char == 'I':
+		n = '1' 
+	elif char == 'F':
+		n = '1' 
+	elif char == 'Z':
+		n = '2' 
+	elif char == 'A': # ? 
+		n = '2'
+	elif char == 'S':
+		n = '5'
+	elif char == 'G':
+		n = '6'
+	elif char == 'B':
+		n = '8'
+	elif char == 'P':
+		n = '9'
+	else:
+		n =  char
+	return n
+
+def vague_N2C(num):
+	if num == '0':
+		c = 'D'
+	elif num == '1':
+		c = 'J'
+	elif num == '2':
+		c = 'Z'
+	elif num == '5':
+		c = 'S'
+	elif num == '7':
+		c = 'T'
+	elif num == '8':
+		c = 'B'
+	elif num == '9':
+		c = 'P'
+	else:
+		c = num
+	return c
+
+def modelReviseCA(mdl, vtype='', vcode=''):
+	return mdl
+
+def modelReviseBJ(mdl, vtype=''):
+	model = mdl.upper()
+	ml = len(model)
+	if ml < 7:
+		return model
+	#print '--- begin revise model %s ---' % model
+	if model[0:3] == '13J': # Normal:  BJ[1345]\d{3}[A-Z]{5}-?[0-9A-Z]*  4 + 5 - 1/2  Main + Tech + '-' + Suffix (2)
+		model = model.replace(model[:3],'BJ')
+		ml -= 1
+	elif model[0:2] == '8J':
+		model = model.replace(model[:2],'BJ')
+	elif model[0:2] == '5J':
+		model = model.replace(model[:2],'BJ')
+	if re.match('B[1345]\d{3}[A-Z]{5}-?[0-9A-Z]*',model):
+		model = model.replace(model[:1],'BJ')
+		ml += 1
+	elif re.match('BJJ[1345]\d{3}[A-Z]{5}-?[0-9A-Z]*',model):
+		model = model.replace(model[:3],'BJ')
+		ml -= 1
+	#elif re.match('B[0-9A-Z][1345]\d{3}[A-Z]{5}-[0-9A-Z]*',model):
+	#   model = model.replace(model[:2],'BJ')
+	idx = model.find('-')
+	if idx >= 0 and idx < 7:	# 9 BJ5240GJB
+		model = model.replace(model[:idx+1],model[:idx])
+		ml -= 1
+	if re.match('BJBB[A-Z]{5}',model) != None : # 3 + 5, A -, A 5, M:B13
+		#print '5: 2 + 5, A -, A 5, M:BB'
+		model = model.replace(model[0:4],'BJ1313')
+		ml += 2
+	#if re.match('BJ[0-9A-Z]{3}[A-Z]{3}',model) != None and model[2:3] != '5' and model[2:6].find('B') >= 0:	# 3 + 5, Y -, N 5, M:B13
+	#   print '4: 3 + 5, Y -, N 5, M:B13'
+	#   tech = model[2:5]
+	#   idx = tech.find('B')
+	#   model = model.replace(model[:2+idx+1],model[:2+idx]+'13')
+	#   ml += 1
+	idx = model.find('-')
+	if idx >= 0:
+		if model[2:3] != '5' and model[2:3] != 'S':
+			if re.match('BJ\d{3}[A-Z]{5}-',model) != None : # 3 + 5, Y -, A 5, M:-1
+				#print '3: 3 + 5, Y -, A 5, M:-1'
+				if model[5:6] == 'D' and model[2:3] == '3':
+					model = model.replace(model[0:5],model[0:5]+'0')
+				elif model[5:6] == 'D' and model[2:3] != '3':
+					model = model.replace(model[0:2],model[0:2]+'3')
+				elif model[5:6] == 'S' and model[2:3] == '4':
+					model = model.replace(model[0:5],model[0:5]+'0')
+				elif model[5:6] == 'S' and model[2:3] != '4':
+					model = model.replace(model[0:2],model[0:2]+'4')
+				else:
+					model = model.replace(model[0:5],model[0:5]+'0')
+				subm = '' #model[2:6]
+				for i in range(2,6):
+					subm += vague_C2N(model[i])
+				model = model.replace(model[2:6],subm)
+			if re.match('BJ[0-46-9]\d{3}[A-Z]{5}-?[0-9A-Z]*',model):
+				if re.match('[026789]+',model[2:3]) != None:	# 4 + 5, Y -, N 5, M:026 (type error, BJ0)
+					#print '1: 4 + 5, Y -, N 5, M:026'
+					if model[6:7] == 'D':
+						model = model.replace(model[0:3],model[0:2]+'3')
+					elif model[6:7] == 'S':
+						model = model.replace(model[0:3],model[0:2]+'4')
+				#return model
+			if re.match('BJ[0-9A-Z]{4}[A-Z]{5}-+',model) != None and (model[2:3] != '5' or model[2:3] != 'S'):  # 4 + 5, Y -, N 5, M:B8 ( B8 means vague_C2N, vice versa)
+				#print '2: 4 + 5, Y -, N 5, M:B8'
+				maind = '' #model[2:6]
+				for i in range(2,6):
+					maind += vague_C2N(model[i])
+				model = model.replace(model[2:6],maind)
+			if re.match('BJ[0-9A-Z]{4}[0-9A-Z]{5}-+',model) != None and (model[2:3] != '5' or model[2:3] != 'S'):   # 4 + 5, Y -, N 5, M:B8 ( B8 means vague_C2N, vice versa)
+				#print '10: 4 + 5, A -, N 5, MT:B88B'
+				subm = '' #model[2:6]
+				for i in range(2,6):
+					subm += vague_C2N(model[i])
+				model = model.replace(model[2:6],subm)
+				subm = ''
+				for i in range(6,11):
+					subm += vague_N2C(model[i])
+				model = model.replace(model[6:11],subm)
+			if re.match('BJ\d{4}[0-9A-Z]{5}-+',model) != None and model[2:3] != '5':	# 4 + 5, Y -, A 5, T:8B
+				#print '11: 4 + 5, Y -, A 5, T:8B'
+				tech = '' #model[6:11]
+				for i in range(6,11):
+					tech += vague_N2C(model[i])
+				model = model.replace(model[6:11],tech)
+			if re.match('BJ\d{4}[0-9A-Z]{6}-+',model) != None and model[2:3] != '5' and model.find('13') >= 6:  # 4 + 6, Y -, N 5, T:13B
+				#print '12: 4 + 6, Y -, N 5, T:13B'
+				tech = model[6:12]
+				idx = tech.find('13')
+				model = model.replace(model[:6+idx+2],model[:6+idx]+'B')
+				ml -= 1
+			if re.match('BJ\d{4}[A-Z]{4}-+',model) != None and model[2:3] != '5':   # 4 + 4, Y -, N 5, T:-1 (short of 1 char)
+				#print '13: 4 + 4, Y -, N 5, T:-1'
+				model = model.replace(model[:8],model[:8]+'F') # add 'F' @ [9]
+				ml += 1
+			if re.match('BJ\d{4}[A-Z]{6}-+',model) != None and model[2:3] != '5':   # 4 + 4, Y -, N 5, T:+1
+				#print '14: 4 + 6, Y -, N 5, T:+1'
+				model = model.replace(model[:9],model[:8])  # delete [9]
+			if re.match('BJ[0-9A-Z]{4}[A-Z]{4}-+',model) != None and (model[2:3] != '5' or model[2:3] != 'S'):  # 4 + 5, Y -, N 5, M:B8 ( B8 means vague_C2N, vice versa)
+				#print '15: 4 + 4, Y -, N 5, MT:B88B'
+				idx = model.find('B')
+				if idx > 1 and idx < 5:
+					model = model.replace(model[:idx+1],model[:idx]+'13')
+					ml += 1
+				idx13 = model.find('13')
+				if idx >= 6:
+					model = model.replace(model[:idx+2],model[:idx]+'B')
+					ml -= 1
+				for cls in 'VDS':
+					idx = model.find(cls)
+					if idx >= 5 and idx <= 7:
+						break
+				if idx == 5:
+					if model[5:6] == 'D' and model[2:3] == '3':
+						model = model.replace(model[0:5],model[0:5]+'0')
+					elif model[5:6] == 'D' and model[2:3] != '3':
+						model = model.replace(model[0:2],model[0:2]+'3')
+					elif model[5:6] == 'S' and model[2:3] == '4':
+						model = model.replace(model[0:5],model[0:5]+'0')
+					elif model[5:6] == 'S' and model[2:3] != '4':
+						model = model.replace(model[0:2],model[0:2]+'4')
+					else:
+						model = model.replace(model[0:5],model[0:5]+'0')
+					subm = '' #model[2:6]
+					for i in range(2,6):
+						subm += vague_C2N(model[i])
+					model = model.replace(model[2:6],subm)
+				elif idx == 6:
+					subm = '' #model[2:6]
+					for i in range(2,6):
+						subm += vague_C2N(model[i])
+					model = model.replace(model[2:6],subm)
+				elif idx == 7:
+					model = model.replace(model[:7],model[:6])
+				#print model
+				subm = ''
+				for i in range(6,10):
+					subm += vague_N2C(model[i])
+				model = model.replace(model[6:10],subm)
+				model = model.replace(model[6:8],model[6:8]+'F')
+			#print 'rule over: ' + model	
+			idx = model.find('B')
+			if idx > 1 and idx < 5:
+				model = model.replace(model[:idx+1],model[:idx]+'13')
+				ml += 1
+			idx = model.find('13')
+			if idx >= 6:
+				model = model.replace(model[:idx+2],model[:idx]+'B')
+				ml -= 1
+			for cls in 'VDS':
+				idx = model.find(cls)
+				if idx >= 5 and idx <= 7:
+					break
+			if idx >= 0 and idx == 5:
+				if model[5:6] == 'D' and model[2:3] == '3':
+					model = model.replace(model[0:5],model[0:5]+'0')
+				elif model[5:6] == 'D' and model[2:3] != '3':
+					model = model.replace(model[0:2],model[0:2]+'3')
+				elif model[5:6] == 'S' and model[2:3] == '4':
+					model = model.replace(model[0:5],model[0:5]+'0')
+				elif model[5:6] == 'S' and model[2:3] != '4':
+					model = model.replace(model[0:2],model[0:2]+'4')
+				else:
+					model = model.replace(model[0:5],model[0:5]+'0')
+			elif idx >= 0 and idx == 6:
+				subm = '' #model[2:6]
+				for i in range(2,6):
+					subm += vague_C2N(model[i])
+				model = model.replace(model[2:6],subm)
+			elif idx >= 0 and idx == 7:
+				model = model.replace(model[:7],model[:6])
+			#print model
+			#subm = ''
+			#for i in range(6,11):
+			#   subm += vague_N2C(model[i])
+			#model = model.replace(model[6:11],subm)
+		else:   # 5
+			if re.match('BJ[5S][A-Z0-9]+',model) != None:   # 4 + 4, A -, Y 5, MT:B88B
+				#print '30: m + n, A -, Y 5, MT:B88B'
+				idx = model.find('V')
+				if idx == 5:
+					model = model.replace(model[0:5],model[0:5]+'0')
+					ml += 1
+					subm = '' #model[2:6]
+					for i in range(2,6):
+						subm += vague_C2N(model[i])
+					model = model.replace(model[2:6],subm)
+				elif idx == 6:
+					subm = '' #model[2:6]
+					for i in range(2,6):
+						subm += vague_C2N(model[i])
+					model = model.replace(model[2:6],subm)
+				elif idx == 7:
+					model = model.replace(model[:7],model[:6])
+					ml -= 1
+				if model[2:3] == 'S':
+					model = model.replace(model[:3],'BJ5')
+				#print model
+				idx = model.find('-')
+				if idx > 6:
+					subm = ''
+					for i in range(6,idx):
+						subm += vague_N2C(model[i])
+					model = model.replace(model[:idx],model[:6]+subm)
+	else:   # N -
+		if re.match('BJ[0-9A-Z]+$',model) != None and ml >= 9:  # 4 + 5, N -, A 5, MT:8B130
+			#print '21: BJ~ , N -, A 5, MT:8B130'
+			idx = model.find('B')
+			if idx > 1 and idx < 5:
+				model = model.replace(model[:idx+1],model[:idx]+'13')
+				ml += 1
+			idx = model.find('13')
+			if idx >= 6:
+				model = model.replace(model[:idx+2],model[:idx]+'B')
+				ml = ml - 1
+			#if model[2:3] == '1':
+			#   cls = 'V'
+			#elif model[2:3] == '3':
+			#   cls = 'D'
+			#elif model[2:3] == '4':
+			#   cls = 'S'
+			#elif model[2:3] == '5':
+			#   cls = 'V'
+			#idx = model.find(cls)
+			#print model
+			#if model[6:9] in special_code_dict or model[5:8] in special_code_dict:
+			for cls in 'VDS':
+				idx = model.find(cls)
+				if idx >= 5 and idx <= 7:
+					break
+			if idx >= 0 and idx == 5:
+				if model[5:6] == 'D' and model[2:3] == '3':
+					model = model.replace(model[0:5],model[0:5]+'0')
+				elif model[5:6] == 'D' and model[2:3] != '3':
+					model = model.replace(model[0:2],model[0:2]+'3')
+				elif model[5:6] == 'S' and model[2:3] == '4':
+					model = model.replace(model[0:5],model[0:5]+'0')
+				elif model[5:6] == 'S' and model[2:3] != '4':
+					model = model.replace(model[0:2],model[0:2]+'4')
+				elif model[5:6] == 'V' and (model[2:3] == '5' and (vtype.find('仓栅')>=0 or vtype.find('特殊')>=0  or vtype.find('厢式')>=0 or vtype.find('罐式')>=0 or vtype.find('专项')>=0  or vtype.find('专用')>=0 )):
+					model = model.replace(model[0:5],model[0:5]+'0')
+				elif model[5:6] == 'V' and (model[2:3] != '5' and (vtype.find('仓栅')>=0 or vtype.find('特殊')>=0  or vtype.find('厢式')>=0 or vtype.find('罐式')>=0 or vtype.find('专项')>=0  or vtype.find('专用')>=0 )):
+					model = model.replace(model[0:2],model[0:2]+'5')
+				else:
+					model = model.replace(model[0:5],model[0:5]+'0')
+				ml += 1
+				subm = '' #model[2:6]
+				for i in range(2,6):
+					subm += vague_C2N(model[i])
+				model = model.replace(model[2:6],subm)
+			elif idx >= 0 and idx == 6:
+				subm = '' #model[2:6]
+				for i in range(2,6):
+					subm += vague_C2N(model[i])
+				model = model.replace(model[2:6],subm)
+			elif idx >= 0 and idx == 7:
+				model = model.replace(model[:7],model[:6])
+				ml -= 1
+			#print model
+			subm = ''
+			if model[2:3] != '5' and model[2:3] != 'S':
+				if ml > 11:
+					for i in range(6,11):
+						subm += vague_N2C(model[i])
+					model = model.replace(model[6:11],subm)
+					#print model
+					model = model.replace(model[:11],model[:11]+'-')
+				else:
+					for i in range(6,ml):
+						subm += vague_N2C(model[i])
+					model = model.replace(model[:ml],model[:6]+subm)
+			else:   # 5, ????----
+				if ml >= 9:
+					for i in range(6,9):
+						subm += vague_N2C(model[i])
+					model = model.replace(model[:9],model[0:6]+subm)
+
+	#print '--- end revise model %s ---' % model
+	return model
+
+'''
+	Revise a model, from model itself, type, brand and vin code
+'''
+def modelRevise(mdl,vtype='',brand='',vcode=''):
+	model = mdl
+	if model[0] == 'B'  or model[0:3] == '13J'  or model[0:2] in ['BJ','8J','5J']:
+		model = modelReviseBJ(model,vtype)
+	return model
+
+def _get_drive_from_model_bj(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+	if True:
+		if model[2:3] != '5' and len(model)>10:	# 11th drive char
+		   dc = model[10:11].lower()
+		if 'dangk'.find(dc) >= 0:
+		   drive = '4x2'
+		#elif 'helpb'.find(dc) >= 0:
+		#   drive = '6x'
+		#elif 'crmfj'.find(dc) >= 0:
+		#   drive = '8x'
+		elif dc == 's':
+		   drive = '4x4'
+		elif dc == 't':
+		   drive = '6x6'
+		elif dc == 'u':
+		   drive = '8x8'
+		pass
+	return drive
+
+def _get_drive_from_model_df(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+		#if model[2:3] != '5' and len(model)>9: # 11th drive char
+		#   dc = model[9:10].upper()
+		#elif model[2:3] == '5' and len(model)>12:
+		#   dc = model[12:13]
+		#if dc == '1':
+		#   drive = '4x2'
+		# for Dongfeng, use VIN-code
+	return drive
+def _get_drive_from_vin_df(vcode,axis = 0, tires = 0):
+	dc = ''
+	drive = 'NULL'
+	if True:
+		#if checkVcode(vcode) == 0 and vcode[0:2] == 'LG':
+		# vcode has been checked! 17 vcode HERE!
+		dc = vcode[6:7].upper()
+		if dc == '1':
+			drive = '4x2'
+		elif dc == '2':
+			drive = '4x4'
+		elif dc == '3':
+			drive = '6x2'
+		elif dc == '4':
+			drive = '6x4'
+		elif dc == '5':
+			drive = '6x6'
+		elif dc == '6':
+			drive = '8x4'
+		elif dc == '7':
+			drive = '8x8'
+		elif dc == 'A':
+			drive = '4x2'
+		elif dc == 'B':
+			drive = '4x4'
+		elif dc == 'C':
+			drive = '6x2'
+		elif dc == 'D':
+			drive = '6x4'
+		elif dc == 'E':
+			drive = '6x6'
+		elif dc == 'F':
+			drive = '8x4'
+		elif dc == 'G':
+			drive = '8x8'
+		elif dc == 'H':
+			drive = '4x2'
+		elif dc == 'J':
+			drive = '4x4'
+		elif dc == 'K':
+			drive = '6x2'
+		elif dc == 'L':
+			drive = '6x4'
+		elif dc == 'M':
+			drive = '6x6'
+		elif dc == 'N':
+			drive = '8x4'
+		elif dc == 'P':
+			drive = '8x8'
+		elif dc == 'R':
+			drive = '4x2'
+		elif dc == 'S':
+			drive = '4x4'
+		elif dc == 'T':
+			drive = '6x2'
+		elif dc == 'U':
+			drive = '6x4'
+		elif dc == 'V':
+			drive = '6x6'
+		elif dc == 'W':
+			drive = '8x4'
+		elif dc == 'X':
+			drive = '8x8'
+	return drive
+def _get_drive_from_model_zz(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+
+	if True:
+		if model[2:3] != '5' and len(model)>9: # 11th drive char
+			dc = model[9:10].upper()
+		elif model[2:3] == '5' and len(special_code_dict) > 0:
+			if len(model) > 12 and model[5:6].isdigit() == True and model[6:7].isdigit() == False and model[6:9] in special_code_dict:
+				dc = model[12:13].upper()
+			elif len(model) > 9 and model[5:6].isdigit() == True and model[6:9] not in special_code_dict:
+				dc = model[9:10].upper()
+			elif len(model) > 13 and model.find("CLXY") > 0:
+				dc = model[13:14].upper()
+		elif model[2:3] == '5' :
+			return drive
+		if dc == '1':
+			drive = '4x2'
+		elif dc == '2':
+			drive = '4x4'
+		elif dc == '3':
+			drive = '6x2'
+		elif dc == '4':
+			drive = '6x4'
+		elif dc == '5':
+			drive = '6x6'
+		elif dc == '6':
+			drive = '8x4'
+		elif dc == '7':
+			drive = '8x8'
+		elif dc == '8':
+			drive = '10x10'
+		elif dc == '9':
+			drive = '12x10'
+		elif dc == '0':
+			drive = '12x12'
+		elif dc == 'A':
+			drive = '8x2'
+		elif dc == 'B':
+			drive = '10x4'
+		elif dc == 'C':
+			drive = '6x2' #6x2R
+		elif dc == 'D':
+			drive = '10x6'
+		elif dc == 'E':
+			drive = '8x6'
+		elif dc == 'F':
+			drive = '6x2' #6x2F
+	return drive
+def _get_drive_from_vin_zz(vcode):
+	dc = ''
+	drive = 'NULL'
+	# vcode has been checked! 17 vcode HERE!
+	dc = vcode[5:6].upper()
+	if dc == 'A' or dc == 'B' or dc == 'C':
+		drive = '4x2'
+	elif dc == 'D' or dc == 'E' :
+		drive = '4x4'
+	elif dc == 'F' or dc == 'G' or dc == 'H':
+		drive = '6x2'
+	elif dc == 'J' or dc == 'L' or dc == 'M':
+		drive = '6x4'
+	elif dc == 'S' or dc == 'U' or dc == 'V':
+		drive = '6x6'
+	elif dc == 'W' or dc == '8' or dc == '7':
+		drive = '8x2'
+	elif dc == 'N' or dc == 'X' or dc == 'Y':
+		drive = '8x4'
+	elif dc == 'P' :
+		drive = '8x6'
+	elif dc == 'Z' or dc == '0' or dc == '1' or dc == '2':
+		drive = '8x4'
+	elif dc == 'R' or dc == '6' :
+		drive = '10x4'
+	elif dc == '9' :
+		drive = '10x6'
+	elif dc == '3' :
+		drive = '10x10'
+	elif dc == '4' :
+		drive = '12x10'
+	elif dc == '5' :
+		drive = '12x12'
+	return drive
+def _get_drive_from_model_ca(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+	if True:
+		if model.find('T1') > 0:
+			drive = '6x4'
+		elif model.find('T2') > 0:
+			drive = '6x2' # 6x2f
+		elif model.find('T3') > 0:
+			drive = '6x2' # 6x2r
+		elif model.find('T4') > 0:
+			drive = '8x4'
+		elif model.find('T5') > 0:
+			drive = '4x4'
+		elif model.find('T') > 0: # todo: re.match('CA[0-9A-Z]*T[A-Z]*',model) != None
+			drive = '6x6'
+		else:
+			drive = '4x2'
+	return drive
+def _get_drive_from_vin_ca(vcode):
+	dc = ''
+	drive = 'NULL'
+	# vcode has been checked! 17 vcode HERE!
+	dc = vcode[3:4].upper()
+	if dc == 'A' or dc == 'G' or dc == 'N' or dc == 'T' or dc == 'Z':
+		drive = '4x2'
+	elif dc == 'B' or dc == 'H' or dc == 'P' or dc == 'U' or dc == '0':
+		drive = '4x4'
+	elif dc == 'C' or dc == 'J' or dc == 'R' or dc == 'V' or dc == '1':
+		drive = '6x2'
+	elif dc == 'D' or dc == 'K' or dc == 'S' or dc == 'W' or dc == '2':
+		drive = '6x4'
+	elif dc == 'E' or dc == 'L' or dc == 'X' or dc == '3' :
+		drive = '6x6'
+	elif dc == 'F' or dc == 'M' or dc == 'Y' or dc == '4' :
+		drive = '8x4'
+	return drive
+def _get_drive_from_model_sx(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+
+	if True:
+		if model[2:3] != '5' and len(model)>10: # 11th drive char
+			dc = model[10:11].upper()
+		elif model[2:3] == '5' and len(special_code_dict) > 0:
+			if len(model) > 13 and model[5:6].isdigit() == True and model[6:7].isdigit() == False and model[6:9] in special_code_dict:
+				dc = model[13:14].upper()
+			elif len(model) > 10 and model[6:9] not in special_code_dict:
+				dc = model[10:11].upper()
+			elif model.find("CLXY") > 0 and len(model) > 14 :
+				dc = model[14:15].upper()
+		elif model[2:3] == '5' :
+			return drive
+		if dc == '1':
+			drive = '4x2'
+		elif dc == '2':
+			drive = '4x4'
+		elif dc == '3':
+			drive = '6x2'
+		elif dc == '4':
+			drive = '6x4'
+		elif dc == '5':
+			drive = '6x6'
+		elif dc == '6':
+			drive = '8x4'
+		elif dc == '7':
+			drive = '8x8'
+		elif dc == '8':
+			drive = '10x10'
+		elif dc == '9':
+			drive = '6x2' # 6x2R 双前轴
+		elif dc == 'A':
+			drive = '8x6'
+		elif dc == 'B':
+			drive = '8x2'
+		elif dc == 'C':
+			drive = '10x4'
+		elif dc == 'D':
+			drive = '10x6'
+		elif dc == 'E':
+			drive = '10x8'
+		elif dc == 'F':
+			drive = '12x12'
+	return drive
+def _get_drive_from_vin_sx(vcode):
+	dc = ''
+	drive = 'NULL'
+	# vcode has been checked! 17 vcode HERE!
+	dc = vcode[7:8].upper()
+	if dc == '1':
+		drive = '4x2'
+	elif dc == '2':
+		drive = '4x4'
+	elif dc == '3':
+		drive = '6x2'
+	elif dc == '4':
+		drive = '6x4'
+	elif dc == '5':
+		drive = '6x6'
+	elif dc == '6':
+		drive = '8x4'
+	elif dc == '7':
+		drive = '8x8'
+	elif dc == '8':
+		drive = '10x10'
+	elif dc == '9':
+		drive = '6x2' # 6x2R
+	elif dc == 'A':
+		drive = '8x6'
+	elif dc == 'B':
+		drive = '8x2'
+	elif dc == 'C':
+		drive = '10x4'
+	elif dc == 'D':
+		drive = '10x6'
+	elif dc == 'E':
+		drive = '10x8'
+	elif dc == 'F':
+		drive = '12x12'
+	return drive
+def _get_drive_from_model_jh(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+	return drive
+def _get_drive_from_model_dy(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+	return drive
+def _get_drive_from_model_hn(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+	return drive
+def _get_drive_from_model_bb(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+	return drive
+def _get_drive_from_model_lz(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+
+	if True:
+		if model[2:3] != '5' and len(model) > 8: 
+			dc = model[7:8].upper()
+			if dc.isdigit():
+				dc = model[8:9].upper()
+		elif model[2:3] == '5' and len(special_code_dict) > 0:
+			if len(model) > 11 and model[5:6].isdigit() == True and model[6:7].isdigit() == False and model[6:9] in special_code_dict:
+				dc = model[10:11].upper()
+			elif model.find("CLXY") > 0 and len(model) > 12 :
+				dc = model[11:12].upper()
+		elif model[2:3] == '5' :
+			return drive
+		#elif model[2:3] == '5' :
+		#	if len(model) > 13 and model[5:6].isdigit() == True and model[6:7].isdigit() == False and model[6:9] in special_code_dict:
+	if dc == 'A':
+		drive = '4x2'
+	elif dc == 'C':
+		drive = '6x2'
+	elif dc == 'D':
+		drive = '6x4'
+	elif dc == 'E':
+		drive = '8x4'
+	return drive
+def _get_drive_from_model_cq(model,special_code_dict = {}):
+	dc = ''
+	drive = 'NULL'
+	if True:
+		if re.match('CQ[1345][0-9]{3}[A-Z]{3}[0-9]{3}',model) != None and len(model)>11:
+			dc = model[11:12].upper()
+		elif re.match('CQ[1345][0-9]{3}[A-Z]{4}[0-9]{3}',model) != None and len(model)>12:
+			dc = model[12:13].upper()
+		elif re.match('CQ5[0-9]{3}[A-Z]{8}[0-9]{3}',model) != None and len(model)>16:
+			dc = model[16:17].upper()
+		elif re.match('CQ5[0-9]{3}[A-Z]{7}[0-9]{3}',model) != None and len(model)>15:
+			dc = model[15:16].upper()
+		elif re.match('CQ5[0-9]{3}[A-Z]{6}[0-9]{3}',model) != None and len(model)>14:
+			dc = model[14:15].upper()
+		if dc == '1':
+			drive = '4x2'
+		elif dc == '2':
+			drive = '4x4'
+		elif dc == '3':
+			drive = '6x2'
+		elif dc == '4':
+			drive = '6x4'
+		elif dc == '5':
+			drive = '6x6'
+		elif dc == '6':
+			drive = '8x4'
+		elif dc == '7':
+			drive = '8x8'
+		elif dc == '8':
+			drive = '8x2'
+		elif dc == '9':
+			drive = '10x4'
+		elif dc == '0':
+			drive = '12x4'
+	return drive
+def _get_drive_from_vin_cq(vcode):
+	dc = ''
+	drive = 'NULL'
+	# vcode has been checked! 17 vcode HERE!
+	dc = vcode[7:8].upper()
+	if dc == '1':
+		drive = '4x2'
+	elif dc == '2':
+		drive = '4x4'
+	elif dc == '3':
+		drive = '6x2'
+	elif dc == '4':
+		drive = '6x4'
+	elif dc == '5':
+		drive = '6x6'
+	elif dc == '6':
+		drive = '8x4'
+	elif dc == '7':
+		drive = '8x8'
+	elif dc == '8':
+		drive = '8x2'
+	elif dc == '9':
+		drive = '10x4'
+	elif dc == '0':
+		drive = '12x4'
+	return drive
+
+def getDrive(model,vcode = '',axis_s = 0, tires_s = 0, valid_vin = None,special_code_dict={}, model_drive_dict={}):
+	_function_enter(_Z_DEBUG_DEBUG)
+	_debug('Function: getDrive()', _Z_DEBUG_DEBUG)
+	dc = ''
+	drive = 'NULL'  # result
+	drive_axis = 'NULL' # axis
+	drive_mdl = 'NULL' # model 
+	drive_vin = 'NULL' # vin
+	drive_dict = 'NULL' # dict
+	tw = '0'
+
+	_debug('special_dict content: ' + str(len(special_code_dict)), _Z_DEBUG_DEBUG)
+	_debug('drive_dict content: ' + str(len(model_drive_dict)), _Z_DEBUG_DEBUG)
+	#print type(drive_dict)
+	#print drive_dict
+	#print isinstance(drive_dict,dict)
+	#if type(drive_dict) is dict: #isinstance(drive_dict,dict)  Syntax Error!!!
+	#	print 'drive_dict is dict'
+	#else:
+	#	print 'drive_dict not dict '
+	
+	valid_mdl = modelCheckWithVin(model,vcode)
+	_debug('valid_mdl: ' + str(valid_mdl), _Z_DEBUG_DEBUG)
+	_debug('valid_vin: ' + str(valid_vin), _Z_DEBUG_DEBUG)
+
+	try:
+		axis = int(axis_s)
+	except:
+		axis = 0
+	else:
+		axis = int(axis_s)
+	
+	try:
+		tires = int(tires_s)
+	except:
+		tires = 0
+	else:
+		tires = int(tires_s)
+	
+	# get drive from axis/tires
+	if axis > 0 and axis < 9:
+		if axis == 2:
+			drive_axis = '4x2'
+		elif axis == 0 and ( tires == 4 or tires == 6 ) :
+			drive_axis = '4x2'
+		elif tires > 4 and tires % 2 == 0 and tires < 25:
+			daxis = tires - axis*2 
+			if daxis > 0 and daxis <= axis*2:
+				drive_axis = str(axis*2) + 'x' + str(daxis)
+	_debug('drive_axis: ' + drive_axis, _Z_DEBUG_DEBUG)
+				#return drive
+
+	# get drive from model
+	if valid_mdl == 0:
+		if model[0:2] == 'BJ' and model[2:3].isdigit() : # or ( vcode[0:3] == 'LVB' or vcode[0:3] == 'LRD'):
+			drive_mdl = _get_drive_from_model_bj(model,special_code_dict)
+		#elif model[0:2] == 'DF' or  model[0:2] == 'EQ' :
+		#	drive_mdl = _get_drive_from_model_df(model,special_code_dict)
+		elif model[0:2] == 'ZZ' and model[2:3].isdigit() :
+			drive_mdl = _get_drive_from_model_zz(model,special_code_dict)
+		elif model[0:2] == 'CA' and model[2:3].isdigit() :
+			drive_mdl = _get_drive_from_model_ca(model,special_code_dict)
+		elif model[0:2] == 'SX' and model[2:3].isdigit() :
+			drive_mdl = _get_drive_from_model_sx(model,special_code_dict)
+		elif model[0:3] == 'HFC' :
+			drive_mdl = _get_drive_from_model_jh(model,special_code_dict)
+		elif model[0:2] == 'HN' and model[2:3].isdigit() :
+			drive_mdl = _get_drive_from_model_hn(model,special_code_dict)
+		elif model[0:3] == 'CGC' :
+			drive_mdl = _get_drive_from_model_dy(model,special_code_dict)
+		elif model[0:2] == 'ND' and model[2:3].isdigit() :
+			drive_mdl = _get_drive_from_model_bb(model,special_code_dict)
+		elif model[0:2] == 'LZ' and model[2:3].isdigit() :
+			drive_mdl = _get_drive_from_model_lz(model,special_code_dict)
+		elif model[0:2] == 'CQ' and model[2:3].isdigit() :
+			drive_mdl = _get_drive_from_model_cq(model,special_code_dict)
+	else:
+		_debug('Error model: ' + model, _Z_DEBUG_DEBUG)
+	_debug('drive_mdl: ' + drive_mdl, _Z_DEBUG_DEBUG)
+   
+	# get drive from dict
+	#drive_info_file = file("vehicle-drive-mode.dic","r")
+	#lines = drive_info_file.readlines()
+	#drive_dict = {}
+	#for line in lines:
+	#	line = line.strip()
+	#	seq = line.split(",")
+	#	if len(seq) != 3:
+	#		continue
+	#	if seq[0] not in drive_dict:
+	#		drive_dict[seq[0]] = seq[2]
+	#	print "drive dict len: %d" % len(drive_dict)
+	#_debug('model_drive_dict len:  ' + len(model_drive_dict), _Z_DEBUG_DEBUG)
+	if model in model_drive_dict:
+		#if drive != 'NULL' and drive != drive_dict[model]:
+		#	#print 'Conflict Dict: ' + drive + ' ' + drive_dict[model]
+		#	pass
+		drive_dict = model_drive_dict[model]
+		#return drive
+	_debug('drive_dict: ' + drive_dict, _Z_DEBUG_DEBUG)
+
+	# check drive_mdl
+	if re.match('[A-Z]{2}[1345][0-9]{3}[A-Z]+',model) != None:
+		tw = model[3:5]
+	elif  re.match('[A-Z]{3}[1345][0-9]{3}[A-Z]+',model) != None:
+		tw = model[4:6]
+	else:
+	#   print '6'
+		tw = '0'
+	tw = int(tw)
+	if tw > 0 and tw < 10 and drive_mdl != '4x2':
+		drive_mdl = '4x2'
+	elif tw == 31 and drive_mdl != 'NULL':
+		drive_mdl = '8x4'
+	#if drive == '4x2' and (tw.isdigit()==False or (tw.isdigit()==True and int(tw)>20)):
+	#   drive = 'error'
+	#   continue
+	#elif drive == '6x2' and (tw.isdigit()==False or (tw.isdigit()==True and int(tw)<15) or (tw.isdigit()==True and int(tw)>=30)):
+	#   drive = 'error'
+	#   continue
+	#elif drive == '6x4' and (tw.isdigit()==False or (tw.isdigit()==True and int(tw)<20) or (tw.isdigit()==True and int(tw)>=35)):
+	#   drive = 'error'
+	#   continue
+	#elif drive[0] == '8' and (tw.isdigit()==False or (tw.isdigit()==True and int(tw)<30) or (tw.isdigit()==True and int(tw)>=45)):
+	#   drive = 'error'
+	#   continue
+	#else:
+	#   drive = 'NULL'
+	
+	# get drive from vin
+	if valid_vin == None:
+		valid_vin = checkVcode(vcode)
+	if valid_vin == 0 and len(vcode) == 17:	
+		if vcode[0:3] == 'LZZ' : #and  model[0:2] == 'ZZ' :
+			drive_vin = _get_drive_from_vin_zz(vcode)
+		elif vcode[0:3] == 'LGA' or  vcode[0:3] == 'LGD' or vcode[0:3] == 'LGG' or vcode[0:3] == 'LGH' : 
+			drive_vin = _get_drive_from_vin_df(vcode)
+		elif vcode[0:3] == 'LFW' or vcode[0:3] == 'LFN' : 
+			drive_vin = _get_drive_from_vin_ca(vcode)
+		elif vcode[0:3] == 'LZG' :
+			drive_vin = _get_drive_from_vin_sx(vcode)
+		elif vcode[0:3] == 'LZF' :
+			drive_vin = _get_drive_from_vin_cq(vcode)
+	_debug('drive_vin: ' + drive_vin, _Z_DEBUG_DEBUG)
+
+	# elect drive
+	if drive_dict != 'NULL': # and drive_dict not in '12x12 10x10 8x8 6x6 12x10 12x8 12x6':
+		drive = drive_dict
+	elif drive_axis != 'NULL': # and drive_axis not in '12x12 10x10 8x8 6x6 12x10 12x8 12x6':
+		drive = drive_axis
+	elif drive_vin != 'NULL': # and drive_vin not in '12x12 10x10 8x8 6x6 12x10 12x8 12x6':
+		drive = drive_vin
+	elif drive_mdl != 'NULL': # and drive_mdl not in '12x12 10x10 8x8 6x6 12x10 12x8 12x6':
+		drive = drive_mdl
+
+	_debug('drive: ' + drive, _Z_DEBUG_DEBUG)
+	
+	_function_exit(_Z_DEBUG_DEBUG)
+	_debug('Exit: getDrive()', _Z_DEBUG_DEBUG)
+	return drive
+
+def getBrand(model,vcode = '',axis = 0, tires = 0):
+	brand = ''
+	if model[0:2] == 'BJ': # or ( vcode[0:3] == 'LVB' or vcode[0:3] == 'LRD'):
+		brand = '欧曼'
+	elif model[0:2] == 'DF' or  model[0:2] == 'EQ' :
+		brand = '东风'
+	elif model[0:2] == 'ZZ' :
+		brand = '重汽'
+	elif model[0:2] == 'CA' :
+		brand = '解放'
+	elif model[0:2] == 'SX' :
+		brand = '陕汽'
+	elif model[0:3] == 'HFC' :
+		brand = '江淮'
+	elif model[0:2] == 'HN' :
+		brand = '华菱'
+	elif model[0:3] == 'CGC' :
+		brand = '大运'
+	elif model[0:2] == 'ND' :
+		brand = '北奔'
+	elif model[0:2] == 'LZ' :
+		brand = '柳汽'
+	elif model[0:2] == 'CQ' :
+		brand = '红岩'
+	else:
+		brand = '其他'
+	return brand
+
+# 0:空,1:柴油,2:汽油,3:天然气,4:电动,5:LNG,6:CNG,7:混合,8:两用燃料,9:双燃料,100:其他
+def convert_fuel_str2int(fuelstr):
+	ftype = 0
+	fstr = fuelstr.strip('\t |-')
+	if fstr == '':
+		return ftype
+	if fstr == '柴油' or fstr == '标准柴油':
+		ftype = 1
+	elif fstr == '汽油':
+		ftype = 2
+	elif fstr == '天然气':
+		ftype = 3
+	elif fstr == '纯电动' or fstr == '电动':
+		ftype = 4
+	elif fstr == 'LNG':
+		ftype = 5
+	elif fstr == 'CNG': # NG ?
+		ftype = 6
+	elif fstr.find('混合') >= 0:
+		ftype = 7
+	elif fstr.find('两用') >= 0:
+		ftype = 8
+	elif fstr.find('双') >= 0:  # 汽油/CNG ??
+		ftype = 9
+	#else:
+	#	ftype = 100
+	return ftype
+
+def _get_fuel_type_from_model_bj(model):
+	ftype = 0
+	if model == '' or len(model) < 10:
+		return ftype
+	fc = model[9:10].upper()
+	if fc in 'ABDEFGHJKMN':
+		ftype = 1
+	elif fc in 'VW':
+		ftype = 2
+	elif fc in 'C':
+		ftype = 3
+	elif fc in '08':	# 8: 燃料电池电动
+		ftype = 4
+	elif fc in '4':
+		ftype = 7
+	#else:
+	#	ftype = 100
+	return ftype
+
+def _get_fuel_type_from_vcode_bj(vcode):
+	ftype = 0
+	if len(vcode) != 17:
+		return ftype
+	fc = vcode[6:7].upper()
+	if fc in 'ABDE':
+		ftype = 1
+	elif fc in 'VW':
+		ftype = 2
+	elif fc in 'CT':
+		ftype = 3
+	elif fc in '04':
+		ftype = 4
+	elif fc in 'LU':
+		ftype = 5
+	elif fc in 'RS':
+		ftype = 8
+	elif fc in '89':
+		ftype = 9
+	#else:
+	#	ftype = 100
+	return ftype
+
+def _get_fuel_type_from_engine_model_bj(emodel):
+	ftype = 0
+	if emodel == '':
+		return ftype
+	if emodel.find('N') > 0:
+		ftype = 3
+	#else:
+	#	ftype = 100
+	return ftype
+
+def _get_fuel_type_from_model_df(model):
+	ftype = 0
+	if model == '':
+		return ftype
+	if model[:3] == 'DFL':
+		ftype = 1
+	#elif model[:3] == 'DFH': # wrong
+	#	ftype = 3
+	#else:
+	#	ftype = 100
+	return ftype
+
+def _get_fuel_type_from_vcode_df(vcode):
+	ftype = 0
+	if len(vcode) != 17:
+		return ftype
+	fc = vcode[5:6].upper()
+	if fc in 'ABCDEFGHJKL':
+		ftype = 1
+	elif fc in '12345678':
+		ftype = 2
+	#elif fc in 'MNPRSTU': # 其他燃料？
+	#	ftype = 100
+	#else:
+	#	ftype = 100
+	return ftype
+
+def _get_fuel_type_from_model_ca(model):
+	ftype = 0
+	if model == '':
+		return ftype
+	if model[-5:].find('M4') >= 0 or model[-5:].find('M5') >= 0 :
+		ftype = 3
+	elif model[6:].find('K') >= 0 :
+		ftype = 1
+	else:
+		ftype = 2
+	return ftype
+
+def _get_fuel_type_from_vcode_ca(vcode):
+	ftype = 0
+	if len(vcode) != 17:
+		return ftype
+	fc = vcode[6:7].upper()
+	if fc in 'ABCDEFGHJKLMNPRS TU':
+		ftype = 1
+	elif fc in '123456':
+		ftype = 2
+	#elif fc in '78': # 汽油代用燃料？
+	#	ftype = 2
+	#elif fc in 'TU': # 柴油代用燃料？
+	#	ftype = 1
+	return ftype
+
+def _get_fuel_type_from_model_zz(model):
+	ftype = 0
+	if model == '':
+		return ftype
+	if model[-5:].find('E1L') >= 0 :
+		ftype = 3
+	#else:
+	#	ftype = 100
+	return ftype
+
+def _get_fuel_type_from_vcode_zz(vcode):
+	ftype = 0
+	if len(vcode) != 17:
+		return ftype
+	fc = vcode[6:7].upper()
+	if fc in 'BCDEFGHKMNSVWXY56':
+		ftype = 1
+	elif fc in '123':
+		ftype = 3
+	return ftype
+
+def _get_fuel_type_from_model_sx(model):
+	ftype = 0
+	if model == '':
+		return ftype
+	if not model[-1].isdigit(): 
+		if model[-2:] == 'TL':
+			ftype = 5
+		elif model[-1] == 'T':
+			ftype = 3
+	return ftype
+
+def _get_fuel_type_from_engine_model_lh(emodel):
+	ftype = 0
+	if emodel == '':
+		return ftype
+	if emodel.find('N') > 0:
+		ftype = 3
+	#else:
+	#	ftype = 100
+	return ftype
+
+# 0:空,1:柴油,2:汽油,3:天然气,4:电动,5:混合,100:其他
+def get_fuel_type(model, emodel = '', vcode = '',vmodel = -1, vvin = -1):
+	ftype = 0
+	if vmodel != -1:
+		valid_model = vmodel
+	else:
+		valid_model = modelCheck(model)
+	if vvin != -1:
+		valid_vcode = vvin
+	else:
+		valid_vcode = checkVcode(vcode)
+	if model[0:2] == 'BJ' and model[2:3].isdigit() : # or ( vcode[0:3] == 'LVB' or vcode[0:3] == 'LRD'):
+		if valid_model == 0:
+			ftype = _get_fuel_type_from_model_bj(model)
+		if ftype == 0:
+			if valid_vcode == 0:
+				ftype = _get_fuel_type_from_vcode_bj(vcode)
+			if emodel and ftype == 0:
+				ftype = _get_fuel_type_from_engine_model_bj(emodel)
+	elif model[0:2] == 'DF' or ( model[0:2] == 'EQ'  and model[2:3].isdigit() ) :
+		if valid_model == 0:
+			ftype = _get_fuel_type_from_model_df(model)
+		if ftype == 0:
+			if valid_vcode == 0:
+				ftype = _get_fuel_type_from_vcode_df(vcode)
+	elif model[0:2] == 'CA'  and model[2:3].isdigit() :
+		if valid_model == 0:
+			ftype = _get_fuel_type_from_model_ca(model)
+		if ftype == 0:
+			if valid_vcode == 0:
+				ftype = _get_fuel_type_from_vcode_ca(vcode)
+	elif model[0:2] == 'ZZ' and model[2:3].isdigit() :
+		if valid_model == 0:
+			ftype = _get_fuel_type_from_model_zz(model)
+		if ftype == 0:
+			if valid_vcode == 0:
+				ftype = _get_fuel_type_from_vcode_zz(vcode)
+	elif model[0:2] == 'SX' and model[2:3].isdigit() :
+		if valid_model == 0:
+			ftype = _get_fuel_type_from_model_sx(model)
+	elif model[0:3] == 'SQR' :
+		ftype = _get_fuel_type_from_engine_model_lh(emodel)
+	return ftype
+
+# like GB3847-2005,GB17691-2005(国Ⅳ)
+def convert_emission_str2int(estr):
+	etype = 0
+	if estr == '':
+		return etype
+	if (estr.find('GB') >= 0 or estr.find('国') >= 0) and (estr.find('Ⅱ') >= 0 or estr.find('II') >= 0):
+		etype = 20
+	elif estr.find('第二阶段') >= 0 or estr.find('第2阶段') >= 0:
+		etype = 20
+	elif (estr.find('GB') >= 0 or estr.find('国') >= 0) and (estr.find('Ⅲ') >= 0 or estr.find('III') >= 0):
+		etype = 30
+	elif estr.find('国3') >= 0 :
+		etype = 30
+	elif estr.find('第三阶段') >= 0 or estr.find('第3阶段') >= 0:
+		etype = 30
+	elif (estr.find('GB') >= 0 or estr.find('国') >= 0) and (estr.find('Ⅳ') >= 0 or estr.find('IV') >= 0):
+		etype = 40
+	elif estr.find('国4') >= 0 :
+		etype = 40
+	elif estr.find('第四阶段') >= 0 or estr.find('第4阶段') >= 0:
+		etype = 40
+	elif (estr.find('GB') >= 0 or estr.find('国') >= 0) and (estr.find('Ⅴ') >= 0 or estr.find('V') >= 0):
+		etype = 50
+	elif estr.find('国5') >= 0 :
+		etype = 50
+	elif estr.find('第五阶段') >= 0 or estr.find('第5阶段') >= 0:
+		etype = 50
+	return etype
+
+def _get_emission_type_from_vcode_bj(vcode):
+	etype = 0
+	if len(vcode) != 17:
+		return etype
+	#ec = vcode[6:7].upper()
+	#if ec in 'ABDE':
+	#	etype = 1
+	return etype
+
+def _get_emission_type_from_engine_model_bj(emodel):
+	etype = 0
+	return etype
+
+def get_emission_type(model, emodel = '', vcode = ''):
+	etype = 0
+	if model[0:2] == 'BJ' and model[2:3].isdigit() : # or ( vcode[0:3] == 'LVB' or vcode[0:3] == 'LRD'):
+		etype = _get_emission_type_from_vcode_bj(vcode)
+		if etype == 0:
+			etype = _get_emission_type_from_engine_model_bj(emodel)
+	return etype
+
+	
+
+
+
+	
+
+
+

@@ -1,0 +1,21 @@
+#!/bin/bash
+EXEC_PATH=$(dirname "$0")
+
+#
+#   Notice: the baked file is actually yesterday, so the date in the file should be -1 day
+#
+#
+
+# prepare
+date_hoy=`date +%Y%m%d`
+date_ayer=`date -d "-1 day $date_hoy" +%Y%m%d`
+year=`date -d $date_hoy +%Y`
+month=`date -d $date_hoy +%m`
+day=`date -d $date_hoy +%d`
+ts_hoy=`date -d "$date_hoy" +%s`000
+
+function zprint(){
+	msg=$1
+	echo $date_hoy $msg
+}
+
