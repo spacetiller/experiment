@@ -35,5 +35,5 @@ int main()
     scanf("%d",&n);
     for(int i=0;i<n;i++)
         scanf("%lld%lld",&m[i],&a[i]);
-    printf("%lld",China(n,m,a));
+    printf("%lld\n",China(n,m,a));
 }
