@@ -12,6 +12,7 @@ func main() {
 	in := im
 	io := big.NewInt(1956)
 	ip := big.NewInt(1)
+	fmt.Printf("im: %v, io: %v, ip: %v\n", im, io, ip)
 	ip.Mul(im, in)
 	fmt.Printf("Big Int: %v\n", ip)
 	ip.Add(ip, im)
