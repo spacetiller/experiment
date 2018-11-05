@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bootstrap Table Examples 0</title>
+    <link rel="stylesheet" href="bootstrap/src/bootstrap.min.css">
+    <link rel="stylesheet" href="bootstrap/src/bootstrap-table.css">
+    <script src="bootstrap/src/jquery-3.3.1.min.js"></script>
+    <script src="bootstrap/src/bootstrap.min.js"></script>
+    <script src="bootstrap/src/bootstrap-table.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1>Bootstrap Table Examples </h1>
+    <table id="table"></table>
+</div>
+
+<script>
+$('#table').bootstrapTable({
+    url: 'data1.json',
+    columns: [{
+        field: 'id',
+        title: 'Item ID'
+    }, {
+        field: 'name',
+        title: 'Item Name'
+    }, ]
+});
+</script>
+</body>
+</html>
