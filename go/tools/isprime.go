@@ -38,11 +38,13 @@ func main() {
 	for i := 2;i< num; i++ {
 		if num % i == 0{
 			fmt.Printf("%d ",i)
+			phi ++
 		}
-		phi ++
 	}
 	fmt.Println("")
 	if phi == 0 {
 		fmt.Printf("%d is prime\n",num)
+	}else{
+		fmt.Printf("%d is composite\n",num)
 	}
 }
