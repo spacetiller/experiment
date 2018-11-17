@@ -1,0 +1,3 @@
+John 18 chaoyang male
+Liping 31 chaoyang female
+Lina 29 Haidian female
