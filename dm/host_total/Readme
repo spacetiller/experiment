@@ -1,0 +1,17 @@
+dataformat为dui日志格式，100条，用来测试。
+
+计算url，输出不重复url
+输出路径为： /user/dm/zhu/host_stat/jilin_jilin/
+nohup ./host.sh 20140701 jilin_jilin &
+
+
+
+
+计算url条数，分为了20个part需要求总和。
+输出路径为： /user/dm/zhu/newhost_stat/jilin_jilini/
+结果保存在本地文件 jilin_0701_count
+nohup ./newhost.sh 20140701 jilin_jilin &
+hadoop fs -text  /user/dm/zhu/newhost_stat/jilin_jilin/part-000* >jilin_0701_count 
+
+log文件为nohup.out
+
