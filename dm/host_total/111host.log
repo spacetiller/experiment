@@ -1,0 +1,10 @@
+----------------------------------------------------
+20140701
+rmr: cannot remove /user/dm/zhu/host_stat/jilin_jilin: No such file or directory.
+15/05/05 14:48:43 WARN streaming.StreamJob: -jobconf option is deprecated, please use -D instead.
+packageJobJar: [./hostmap.py, ./hostred.py, /home/hadoop/hadoop-0.20.2-cdh3u0/hadoop-tmp-dm/hadoop-unjar1425614113730913275/] [] /tmp/streamjob7163730475100568824.jar tmpDir=null
+15/05/05 14:48:43 INFO mapred.JobClient: Cleaning up the staging area hdfs://DC01DR02R08C02NN01:54310/home/mapreduce/hadoop-0.20.2-cdh3u5/hadoop-tmp-mapreduce/mapred/staging/dm/.staging/job_201501261434_15020
+15/05/05 14:48:43 ERROR security.UserGroupInformation: PriviledgedActionException as:dm (auth:SIMPLE) cause:org.apache.hadoop.mapred.InvalidInputException: Input Pattern hdfs://DC01DR02R08C02NN01:54310/datax/jilin_jilin/gene/20140701* matches 0 files
+15/05/05 14:48:43 ERROR streaming.StreamJob: Error Launching job : Input Pattern hdfs://DC01DR02R08C02NN01:54310/datax/jilin_jilin/gene/20140701* matches 0 files
+Streaming Command Failed!
+ls: Cannot access /user/dm/zhu/host_stat/jilin_jilin: No such file or directory.
