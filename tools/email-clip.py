@@ -18,13 +18,13 @@ elif len(sys.argv) == 2:
 today = datetime.date.today()
 date_hoy = today.strftime("%Y-%m-%d")
 
-From = "zhanghui01@sinoiov.com"
-To = "zhanghui01@sinoiov.com"
-Cc = "zhanghui01@sinoiov.com"
+From = "dev@pk4yo.com"
+To = "zhanghui@pk4yo.com"
+Cc = "zhanghui@pk4yo.com"
 #file_name = "./data.txt"#附件名
 
-server = smtplib.SMTP("mail.sinoiov.com")
-server.login("zhanghui01@sinoiov.com","zjxl2016zjc") #仅smtp服务器需要验证时
+server = smtplib.SMTP("smtp.exmail.qq.com")
+server.login("dev@pk4yo.com","PK2019d") #仅smtp服务器需要验证时
 
 # 构造MIMEMultipart对象做为根容器
 main_msg = email.MIMEMultipart.MIMEMultipart()
