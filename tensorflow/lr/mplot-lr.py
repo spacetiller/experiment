@@ -36,9 +36,9 @@ for step in range(300):
     sess.run(train)
     if step % 20 == 0:
         print(step, 'weight: ',sess.run(weights), ' bias: ', sess.run(biases))
-sess.close()
 
 plt.plot(x_data, y_data, "ro", label="Origina data")  #ro 表示用红色red的圆圈表示
-plt.plot(x_data, sess.run(tf.add(tf.multiply(weights, x_data), bias)), label="fitting line")
+plt.plot(x_data, sess.run(tf.add(tf.multiply(weights, x_data), biases)), label="fitting line")
 plt.legend ()
 plt.show ()
+sess.close()
