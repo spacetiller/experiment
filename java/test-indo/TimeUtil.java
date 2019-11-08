@@ -5,9 +5,9 @@
  * @author Juncheng
  * @version 0.1
  */
-package net.wecash.bi.marketing.util;
+// package net.wecash.bi.marketing.util;
 
-import com.alibaba.fastjson.JSONObject;
+// import com.alibaba.fastjson.JSONObject;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -99,17 +99,13 @@ public class TimeUtil {
         return monthAgo.format(D_FORMATTER);
     }
 
-    public static void setQueryTimeParam(List<JSONObject> jsonList, String since, String to) {
-        Date being = dateTimeStrToDate(since);
-        Date end = dateTimeStrToDate(to);
-        setQueryTimeParam(jsonList, being, end);
-    }
-
-    public static void setQueryTimeParam(List<JSONObject> jsonList, Date sinceDate, Date toDate) {
-        for (JSONObject item : jsonList) {
-            item.put(TIME_FROM, sinceDate);
-            item.put(TIME_TO, toDate);
-        }
+    public static void main(String args[]){
+        System.out.println(pastHourBegin());
+        System.out.println(pastHourEnd());
     }
 }
+
+
+
+
 
