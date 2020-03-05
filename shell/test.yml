@@ -1,0 +1,8 @@
+#spring
+spring:
+  profiles:
+    active: devk8s-jkt #aaaa
+  main:
+    web_environment: false
+  application:
+    name: 20*60 #s
