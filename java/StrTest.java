@@ -9,6 +9,8 @@ public class StrTest {
 		StrTest st = new StrTest();
 		st.fun(s);
 		System.out.println(s);
+		String e = "";
+		System.out.println(e == "");
 	}
 	void fun(String s) {
 		s = "def";
