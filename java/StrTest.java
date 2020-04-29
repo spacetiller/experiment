@@ -11,6 +11,9 @@ public class StrTest {
 		System.out.println(s);
 		String e = "";
 		System.out.println(e == "");
+		System.out.println("abcd\t=\t1111");
+		System.out.println("e\t=\t555555555");
+		System.out.println("dkasdlfsldf\t=\t666");
 	}
 	void fun(String s) {
 		s = "def";
