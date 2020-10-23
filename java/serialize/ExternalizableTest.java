@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectInput;
+import java.util.logging.Logger;
 
 public class ExternalizableTest {
 	public static void main(String[] args) throws Exception, IOException {
@@ -35,8 +36,8 @@ class User1 implements Externalizable{
 	private transient String name;
 	//private final transient Logger logger = Logger.getLogger("demo");
 
-	public void User1(){
-	}
+	//public void User1(){
+	//}
 	
 	public void setName(String name){
 		this.name = name;
