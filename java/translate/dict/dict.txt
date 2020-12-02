@@ -1,0 +1,3 @@
+i=我
+love=爱
+china=中国

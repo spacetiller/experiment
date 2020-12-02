@@ -1,4 +1,4 @@
-package net.wecash.bi.mimir.main.util;
+//package net.wecash.bi.mimir.main.util;
 
 import java.util.HashMap;
 
