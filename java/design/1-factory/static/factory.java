@@ -28,6 +28,8 @@ class Client{
         }
     }
 	public static void main(String args[]) {
+		//StaticFactory sf = new StaticFactory();
+		System.out.println(this.get("A"));
 		System.out.println("HelloWorld122211！");
 	}
 }
