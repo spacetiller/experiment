@@ -41,7 +41,7 @@ ws = websocket.WebSocketApp(wsUrl+access_token, on_message=on_message, on_error=
                             on_ping=on_ping, on_pong=on_pong)
 
 #ws.run_forever(ping_interval=30, ping_timeout=5)
-
+#_thread.start_new_thread(run_forever, (ws,))
 _thread.start_new_thread(run_forever, (ws,))
 
 time.sleep(2)
