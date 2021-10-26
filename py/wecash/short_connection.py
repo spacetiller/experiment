@@ -8,5 +8,14 @@ wsUrl = "ws://10.119.13.16:10000/dct-business-api/ws/business?access_token="
 ws = websocket.WebSocket()
 ws.connect(wsUrl+access_token)
 ws.send("mesasage")
+ws.send("ping")
+while True:
+    value=ws.recv()
+    print(value)
+    if(value == 'ping'):
+        ws.send('pong')
+
+
+
 ws.close()
 

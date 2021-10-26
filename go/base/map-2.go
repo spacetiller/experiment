@@ -17,6 +17,8 @@ func main() {
 		fmt.Println(country, "首都是", countryCapitalMap[country])
 	}
 
+	//countryCapitalMap["美国 "] = 
+
 	/*查看元素在集合中是否存在 */
 	captial, ok := countryCapitalMap["美国"] /*如果确定是真实的,则存在,否则不存在 */
 	/*fmt.Println(captial) */

@@ -24,6 +24,8 @@ func main() {
 	/* 拷贝 numbers 的内容到 numbers1 */
 	copy(numbers1, numbers)
 	printSlice(numbers1)
+	fmt.Printf("%p\n",&numbers)
+	fmt.Printf("%p\n",&numbers1)
 }
 
 func printSlice(x []int) {
