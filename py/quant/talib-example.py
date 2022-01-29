@@ -1,8 +1,16 @@
 #-*-coding=utf-8-*-
-import tkinter as tk
-from tkinter import *
-from tkinter import ttk
-# import ttk
+try:
+    # Python 3.x
+    import tkinter as tk
+    from tkinter import *
+    from tkinter import ttk #this is how we import for Python 3.x
+except:
+    # Python 2.x
+    import Tkinter as tk
+    from Tkinter import *
+    import ttk # this needs to be inside the except: not outside like you had it.
+    # this is because if you were to move to python 3 with this it would not work and cause an error.
+
 import matplotlib.pyplot as plt
 
 import numpy as np
