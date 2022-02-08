@@ -32,18 +32,14 @@ df=pro.query('daily', ts_code='600519.SH', start_date='20100101', end_date='2021
 df.index=pd.to_datetime(df.trade_date)
 df=df.sort_index()
 
-types=['SMA','EMA','WMA','DEMA','TEMA',
-'TRIMA','KAMA','MAMA','T3']
-df_ma=pd.DataFrame(df.close)
-for i in range(len(types)):
-    df_ma[types[i]]=ta.MA(df.close,timeperiod=5,matype=i)
-df_ma.tail()
-df_ma.loc['2018-08-01':].plot(figsize=(16,6))
-ax = plt.gca()  
-ax.spines['right'].set_color('none') 
-ax.spines['top'].set_color('none')   
-#plt.title('上证指数各种类型移动平均线',fontsize=15)
-plt.title('600519.SH MA 2010-2021',fontsize=15)
-plt.xlabel('')
+# BBANDS
+H_line,M_line,L_line=ta.BBANDS(df.close, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+df1=pd.DataFrame(df.close,index=df.index,columns=['close'])
+df1['H_line']=H_line
+df1['M_line']=M_line
+df1['L_line']=L_line
+
+df1.loc['2021-01-01':].plot(figsize=(16,6),title='Bollinger Bands', xlabel='date', ylabel='price')
+
 plt.show()
 

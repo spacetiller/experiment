@@ -32,18 +32,22 @@ df=pro.query('daily', ts_code='600519.SH', start_date='20100101', end_date='2021
 df.index=pd.to_datetime(df.trade_date)
 df=df.sort_index()
 
-types=['SMA','EMA','WMA','DEMA','TEMA',
-'TRIMA','KAMA','MAMA','T3']
-df_ma=pd.DataFrame(df.close)
-for i in range(len(types)):
-    df_ma[types[i]]=ta.MA(df.close,timeperiod=5,matype=i)
-df_ma.tail()
-df_ma.loc['2018-08-01':].plot(figsize=(16,6))
-ax = plt.gca()  
-ax.spines['right'].set_color('none') 
-ax.spines['top'].set_color('none')   
-#plt.title('上证指数各种类型移动平均线',fontsize=15)
-plt.title('600519.SH MA 2010-2021',fontsize=15)
-plt.xlabel('')
+# OBV
+obvta = ta.OBV(df['close'], df['vol'])
+obv=[]
+for i in range(0,len(df)):
+    if i == 0:
+        obv.append(df['vol'].values[i])
+    else:
+        if df['close'].values[i]>df['close'].values[i-1]:
+            obv.append(obv[-1]+df['vol'].values[i])
+        if df['close'].values[i]<df['close'].values[i-1]:
+            obv.append(obv[-1]-df['vol'].values[i])
+        if df['close'].values[i]==df['close'].values[i-1]:
+            obv.append(obv[-1])
+df['obv'] = obv
+ax1 = df[["close","obv"]].plot(secondary_y=['obv'],figsize=(16,8),title='OBV',xlabel='date', ylabel='price')
+ax1.right_ax.set_ylabel('OBV')
+
 plt.show()
 
