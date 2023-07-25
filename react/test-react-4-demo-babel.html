@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- <script src="http://fb.me/react-0.12.1.js"></script>
+    <script src="http://fb.me/JSXTransformer-0.12.1.js"></script>-->
+    <script src="https://cdn.staticfile.org/babel-standalone/6.26.0/babel.min.js"></script>
+    <script src="https://cdn.staticfile.org/react/16.4.0/umd/react.development.js"></script>
+    <script src="https://cdn.staticfile.org/react-dom/16.4.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.staticfile.org/jquery/2.1.4/jquery.min.js"></script>
+    <!-- 生产环境中不建议使用 
+    <script src="https://cdn.staticfile.org/babel-standalone/6.26.0/babel.min.js"></script>-->
+  </head>
+  <body>
+    <div id="example">
+      <div id="example1"></div>
+      <div id="example6"></div>
+      <div id="example7"></div>
+      <div id="example2"></div>
+      <div id="example3"></div>
+      <div id="example4"></div>
+      <div id="example5"></div>
+      <div id="example8"></div>
+      <div id="example9"></div>
+    </div>
+    <script type="text/babel">
+      /////////////////  example1     ------------------------
+      ReactDOM.render(
+        <h1>Hello, world! 1</h1>,
+        document.getElementById('example1')
+      );
+
+
+      /////////////////  example2     ------------------------
+      function tick() {
+        const element = (
+          <div>
+            <h1>Hello, world! 2</h1>
+            <h2>现在是 {new Date().toLocaleTimeString()}</h2>
+          </div>
+        );
+        ReactDOM.render(
+          element,
+          document.getElementById('example2')
+        );
+      }
+      setInterval(tick, 1);
+
+
+      /////////////////  example3     ------------------------
+      function Welcome(props) {
+        return (
+          // 此处注释的写法 
+          <div className="shopping-list">
+            {/* 此处 注释的写法 必须要{}包裹 */}
+            <h1>Shopping List for {props.name}</h1>
+            <ul>
+              <li>Instagram</li>
+              <li>WhatsApp</li>
+            </ul>
+          </div>
+        )
+      }
+
+      const element = <Welcome name="jack" />;
+
+      ReactDOM.render(
+        element,
+        document.getElementById('example3')
+      )
+
+
+      /////////////////  example4     ------------------------
+      class Clock extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {date: new Date()};
+        }
+       
+        componentDidMount() {
+          this.timerID = setInterval(
+            () => this.tick(),
+            1000
+          );
+        }
+       
+        componentWillUnmount() {
+          clearInterval(this.timerID);
+        }
+       
+        tick() {
+          this.setState({
+            date: new Date()
+          });
+        }
+       
+        render() {
+          return (
+            <div>
+              <h1>Component</h1>
+              <h2>现在是 {this.state.date.toLocaleTimeString()}</h2>
+            </div>
+          );
+        }
+      }
+       
+      ReactDOM.render(
+        <Clock name="aa" />,
+        document.getElementById('example4')
+      );
+
+
+      /////////////////  example5     ------------------------
+      function FormattedDate(props) {
+        return <h2>现在是 {props.date.toLocaleTimeString()}</h2>;
+      }
+       
+      class Clock2 extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {date: new Date(), opacity: 1.0};
+          this.id = props.id;
+        }
+       
+        /* componentDidMount() {
+          this.timerID = setInterval(
+            () => this.tick(),
+            1000
+          );
+        } */
+
+        componentDidMount() {
+          this.timerID = setInterval(function () {
+            var opacity = this.state.opacity;
+            opacity -= .1;
+            if (opacity < 0.1) {
+              opacity = 1.0;
+            }
+            this.setState({
+              opacity: opacity
+            });
+
+            this.tick();
+          }.bind(this), 1000);
+        }
+       
+        componentWillUnmount() {
+          clearInterval(this.timerID);
+        }
+       
+        tick() {
+          this.setState({
+            date: new Date()
+          });
+        }
+       
+        render() {
+          return (
+            <div style={{opacity: this.state.opacity}}>
+              <h1>Clock {this.id}</h1>
+              <FormattedDate date={this.state.date} />
+              <span>Opacity: {this.state.opacity}</span>
+            </div>
+            
+          );
+        }
+
+      }
+       
+      function App() {
+        return (
+          <div>
+            <Clock2 id="1" />
+            {/*  <Clock2 id="2" />
+            <Clock2 id="3" /> */}
+          </div>
+        );
+      }
+       
+      ReactDOM.render(<App />, document.getElementById('example5'));
+
+
+      /////////////////  example6     ------------------------
+      class Toggle extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {isToggleOn: true};
+       
+          // 这边绑定是必要的，这样 `this` 才能在回调函数中使用
+          this.handleClick = this.handleClick.bind(this);
+        }
+       
+        handleClick() {
+          this.setState(prevState => ({
+            isToggleOn: !prevState.isToggleOn
+          }));
+        }
+       
+        render() {
+          return (
+            <button onClick={this.handleClick}>
+              {this.state.isToggleOn ? 'ON' : 'OFF'}
+            </button>
+          );
+        }
+      }
+       
+      ReactDOM.render(
+        <Toggle />,
+        document.getElementById('example6')
+      );
+
+
+      /////////////////  example7     ------------------------
+      class Counter extends React.Component{
+        constructor(props) {
+            super(props);
+            this.state = {clickCount: 0};
+            this.handleClick = this.handleClick.bind(this);
+        }
+        
+        handleClick() {
+          this.setState(function(state) {
+            return {clickCount: state.clickCount + 1};
+          });
+        }
+        render () {
+          return (<h2 onClick={this.handleClick}>点我！点击次数为: {this.state.clickCount}</h2>);
+        }
+      }
+      ReactDOM.render(
+        <Counter />,
+        document.getElementById('example7')
+      );
+
+
+      /////////////////  example8     ------------------------
+      class UserGist extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {username: '', lastGistUrl: ''};
+        }
+       
+       
+        componentDidMount() {
+          this.serverRequest = $.get(this.props.source, function (result) {
+            var lastGist = result[0];
+            this.setState({
+              username: lastGist.owner.login,
+              lastGistUrl: lastGist.html_url
+            });
+          }.bind(this));
+        }
+       
+        componentWillUnmount() {
+          this.serverRequest.abort();
+        }
+       
+        render() {
+          return (
+            <div>
+              {this.state.username} 用户最新的 Gist 共享地址：
+              <a href={this.state.lastGistUrl}>{this.state.lastGistUrl}</a>
+            </div>
+          );
+        }
+      }
+       
+      ReactDOM.render(
+        <UserGist source="https://api.github.com/users/octocat/gists" />,
+        document.getElementById('example8')
+      );
+
+
+      /////////////////  example9     ------------------------
+      class MyComponent extends React.Component {
+        handleClick() {
+          // 使用原生的 DOM API 获取焦点
+          this.refs.myInput.focus();
+        }
+        render() {
+          //  当组件插入到 DOM 后，ref 属性添加一个组件的引用于到 this.refs
+          return (
+            <div>
+              <input type="text" ref="myInput" />
+              <input
+                type="button"
+                value="点我输入框获取焦点"
+                onClick={this.handleClick.bind(this)}
+              />
+            </div>
+          );
+        }
+      }
+       
+      ReactDOM.render(
+        <MyComponent />,
+        document.getElementById('example9')
+      );
+    </script>
+  </body>
+</html>

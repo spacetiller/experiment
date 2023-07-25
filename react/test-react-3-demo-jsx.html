@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     <script src="http://fb.me/react-0.12.1.js"></script>
+    <script src="http://fb.me/JSXTransformer-0.12.1.js"></script><!---->
+    <!--<script src="https://cdn.staticfile.org/react/16.4.0/umd/react.development.js"></script>
+    <script src="https://cdn.staticfile.org/react-dom/16.4.0/umd/react-dom.development.js"></script>
+     生产环境中不建议使用 
+    <script src="https://cdn.staticfile.org/babel-standalone/6.26.0/babel.min.js"></script>-->
+  </head>
+  <body>
+    <div id="example">
+      <div id="example1"></div>
+      <div id="example2"></div>
+      <div id="example3"></div>
+      <div id="example4"></div>
+      <div id="example5"></div>
+    </div>
+    <script type="text/jsx">
+      /////////////////  example1     ------------------------
+      React.render(
+        <h1>Hello, world! 1</h1>,
+        document.getElementById('example1')
+      );
+
+
+      /////////////////  example2     ------------------------
+      function tick() {
+        const element = (
+          <div>
+            <h1>Hello, world! 2</h1>
+            <h2>现在是 {new Date().toLocaleTimeString()}</h2>
+          </div>
+        );
+        React.render(
+          element,
+          document.getElementById('example2')
+        );
+      }
+      setInterval(tick, 1);
+
+
+      /////////////////  example3     ------------------------
+      function Welcome(props) {
+        return (
+          // 此处注释的写法 
+          <div className="shopping-list">
+            {/* 此处 注释的写法 必须要{}包裹 */}
+            <h1>Shopping List for {props.name}</h1>
+            <ul>
+              <li>Instagram</li>
+              <li>WhatsApp</li>
+            </ul>
+          </div>
+        )
+      }
+
+      const element = <Welcome name="jack" />;
+
+      React.render(
+        element,
+        document.getElementById('example3')
+      )
+
+
+      /////////////////  example4     ------------------------
+      class Clock extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = {date: new Date()};
+        }
+       
+        componentDidMount() {
+          this.timerID = setInterval(
+            () => this.tick(),
+            1000
+          );
+        }
+       
+        componentWillUnmount() {
+          clearInterval(this.timerID);
+        }
+       
+        tick() {
+          this.setState({
+            date: new Date()
+          });
+        }
+       
+        render() {
+          return (
+            <div>
+              <h1>Component</h1>
+              <h2>现在是 {this.state.date.toLocaleTimeString()}</h2>
+            </div>
+          );
+        }
+      }
+       
+      React.render(
+        <Clock />,
+        document.getElementById('example4')
+      );
+    </script>
+  </body>
+</html>
