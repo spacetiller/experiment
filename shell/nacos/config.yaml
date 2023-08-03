@@ -1,0 +1,7 @@
+kafka:
+  bootstrap-servers: 10.0.0.4:9092,10.0.0.5:9092,10.0.0.6:9092
+redis:
+  address: 10.0.0.4
+  port: 6889
+  password: wu2kku6d81nm
+port: 9002

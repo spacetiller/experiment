@@ -1,0 +1,13 @@
+accounts:
+  - name: zhangfei
+    domain: shu 
+    id: 65
+    api_key: ZEVOODE
+spring:
+    kafka:
+        address: 127.0.0.1:9200, 192.168.0.5:9200
+    redis:
+        address: 127.0.0.1
+        port: 6390
+        password: r123kuwy2p
+port: 8088
