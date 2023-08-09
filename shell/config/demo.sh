@@ -10,34 +10,35 @@
 
 date=`date +"%Y-%m-%d %H:%M:%S"`
 
-#cur_env=`conda env list | sed -n '/\*/p' | awk '{print $1}'`
-
-delimeter=':'
-
 # 常量大写
 APP=`basename $0`
 APPEXE="$0"
 APPDIR=$(cd `dirname $APPEXE`; pwd) # 应用数据分离，不cd修改主目录
+
 # 变量小写
-input_config_file=$APPDIR/config.yaml
-output_config_file=$APPDIR/output.yaml
+input_config_file=
+output_config_file=
+delimeter=':'
+is_output_dir=0
+output_file_num=0
 
 # 提示信息
-INIT_MESSAGE="Nacos自动配置工具，来自CDP与数字化营销组\n 若不指定输入配置文件，默认本目录下config.yaml\n 若不指定输出配置文件，默认本目录下output.yaml"
-INIT_USAGE="Usage: $APP [-q] [-l LOGFILE] \n\t-q 安静模式，日志不输出到屏幕"
-LOG_LEVEL=1     # DEBUG-1, INFO-2, WARN-3, ERROR-4
+INIT_MESSAGE="Nacos自动配置工具，来自CDP与数字化营销组\n 此工具读取一个元配置yaml文件，并将配置更新到目标yaml文件的对应主键上\n 若不指定输入配置文件，默认本目录下config.yaml\n 若不指定输出配置文件，默认本目录下output.yaml"
+INIT_USAGE="Usage: $APP [-h] [-v] [-l LOGFILE] [-i INFILE] [-o OUTFILE] \n\t-h 显示此帮助信息\n\t-v 详细模式，输出日志级别信息到屏幕\n\t-l 日志文件，默认${APP%.*}.log\n\t-i 输入配置文件\n\t-o 输出配置文件或目录，目录默认yaml文件"
+LOG_LEVEL=2     # DEBUG-1, INFO-2, WARN-3, ERROR-4
 
 
 is_macos=0
 [ `uname` == "Darwin" ] && is_macos=1
 is_bsdsed=0
-[ -z "`sed -n '3iaaa' $input_config_file 2>/dev/null`" ] && is_bsdsed=1
+[ -z "`echo -e "a\nb\nc" | sed -n '3iaaa' 2>/dev/null`" ] && is_bsdsed=1
 
 
 # 参数配置
 option_quiet=0
 option_verbose=n
-option_logfile=$APPDIR/demo.log
+option_logfile=
+
 # 参数值（tbd）
 conf_kafka=
 conf_num=0
@@ -54,9 +55,6 @@ last_key=
 
 stat_total=0
 stat_real=0
-
-# --------------------------------------- 预处理区 ---------------------------------------
-
 
 
 # --------------------------------------- 函数区 ---------------------------------------
@@ -164,53 +162,6 @@ function read_opt_with_yaml_tool() {
 }
 
 #
-# 获取配置文件函数，shyaml工具无法使用时调用
-#
-function read_key(){
-    log "Enter function $FUNCNAME >>>>>>>>>"
-    local flag=0
-    # 逐行读取内容
-    cat $1 | while read LINE
-    do 
-        if [ $flag == 0 ];then
-            # 属性开始标志 
-            if [ "$(echo $LINE | grep "$key:")" != "" ];then
-                if [ "$(echo $LINE | grep -E ' ')" != "" ];then
-            		# 截取出key值
-                	echo "$LINE" | awk -F " " '{print $2}'
-                	continue
-            	else
-            		# 如果关键词后面没有空格，则跳出继续查找
-                	continue
-            	fi
-            fi
-        fi
-    done
-    log "Exit function $FUNCNAME ----------------"
-}
-
-
-# 获取配置文件指定key的value
-function get_opt() {
-    file=$1
-    section=$2
-    key=$3
-    val=$(awk -F "$delimeter" '/\['${section}'\]/{a=1}a==1&&$1~/'${key}'/{print $2;exit}' $file)
-    echo ${val}
-}
-
-# 更新配置文件指定section指定key的value
-function set_opt() {
-    file=$1
-    section=$2
-    key=$3
-    val=$4
-    echo $delimeter ${section} ${key} ${val} ${file}
-    awk -F "$delimeter" '/\['${section}'\]/{a=1} (a==1 && "'${key}'"==$1){gsub($2,"'${val}'");a=0} {print $0}' ${file} 1<>${file}
-}
-
-
-#
 #   修改目标配置文件，源配置已读取到keys和values两个数组
 #   @params：1、section-上面一行的行首关键字，2、key，需要替换的关键字，3、value，替换值，4、需要修改的文件
 #   @return：None
@@ -237,20 +188,20 @@ function write_one_key_to_file() {
         ! [ -z "$_res" ] && let stat_real++
         # 执行
         sed -E -i".bak" -e "s/^${_key}: .*/${_key}: ${_value}/" $_output_file
-        log "完成单配置项：(行首$_key: *) -> ($_key: $_value)"
+        info "完成单配置项：(行首$_key: *) -> ($_key: $_value)"
     else
         if [ -z "$last_section" ];then  # 首次修改
             last_section=$_section
             last_key=$_key
-            log 11: $last_section, $last_key
+            #log 11: $last_section, $last_key
         elif [ ""$_section == ""$last_section ];then    # 同section，根据上下key匹配
             _section=$last_key
             last_key=$_key
-            log 22: $last_section, $last_key
+            #log 22: $last_section, $last_key
         else
             last_section=$_section
             last_key=$_key
-            log 33: $last_section, $last_key
+            #log 33: $last_section, $last_key
         fi
         # 预处理，统计
         local _res=`sed -E -n -e "
@@ -263,9 +214,10 @@ function write_one_key_to_file() {
         sed -E -i".bak" -e "
         /${_section}:.*$/ {
             n
+            /[[:space:]]*#.*/n
             s/(${_key}:) (.*)/\1 $_value/g
         }" $_output_file 
-        log "完成配置项：$_section/$_key: * -> $_section/$_key: $_value"
+        info "完成配置项：$_section/$_key: * -> $_section/$_key: $_value"
 
     fi
     
@@ -286,10 +238,10 @@ function write_configs_all() {
     local _output_file=$1
     [ -z $_output_file ] && _output_file=$output_config_file
 
-    echo $_output_file
+    # echo $_output_file
     cp ${_output_file} ${_output_file}.orig
     for (( i = 0; i < ${#conf_values[@]}; ++i )); do
-        echo "${conf_keys[$i]}: ${conf_values[$i]}"
+        log "配置：${conf_keys[$i]}: ${conf_values[$i]}"
         local _section=${conf_keys[$i]%%.*}
         local _key=${conf_keys[$i]#*.}
         local _value=${conf_values[$i]}
@@ -301,22 +253,30 @@ function write_configs_all() {
     log "Exit function $FUNCNAME ----------------"
 }
 
+#
+#   解析参数
+#   
 function process_params() {
-    while getopts :vd:l:h OPTION
+    while getopts :vi:o:l:h OPTION
     do
         case $OPTION in
             h)
-                echo "option -h"
                 usage
                 exit
                 ;;
             v)
                 echo "option -v"
-                option_verbose=y
+                # option_verbose=1
+                LOG_LEVEL=1
                 ;;
             l)
-                echo "option -l"
                 option_logfile=$OPTARG
+                ;;
+            i)
+                input_config_file=$OPTARG
+                ;;
+            o)
+                output_config_file=$OPTARG
                 ;;
             \?)                       #如果出现错误，则解析为?
                 echo "option none"
@@ -326,27 +286,43 @@ function process_params() {
     done
 }
 
-# 主函数
+# 主函数，未用
 function main() {
 	echo "__main__"
 }
 
 # --------------------------------------- 主程序区 ---------------------------------------
 
-
 #  >>>>>>>>>>> 1. 参数处理  >>>>>>>>>>>
 
 custom_print $INIT_MESSAGE
 
 process_params $@
-
+if [ -z "$option_logfile" -o ! -f "$option_logfile" ];then
+    option_logfile=${APP%.*}.log
+    info "未指定有效日志文件，默认：$option_logfile"
+else
+    info "日志文件已配置：$option_logfile"
+fi
+if [ -z "$input_config_file" -o ! -f "$input_config_file" ];then
+    input_config_file=$APPDIR/config.yaml
+    info "未指定有效配置文件，默认：$input_config_file"
+else
+    info "输入配置文件已指定：$input_config_file"
+fi
+if [ -z "$output_config_file" ];then
+    output_config_file=$APPDIR/output.yaml
+    info "未指定输出配置文件，默认：$output_config_file"
+elif [ -f $output_config_file ];then
+    info "输出配置文件已指定：$output_config_file"
+elif [ -d $output_config_file ];then
+    info "输出配置文件目录已指定：$output_config_file"
+else
+    output_config_file=$APPDIR/output.yaml
+    info "未指定有效输出文件，默认：$output_config_file"
+fi
 
 echo $date >> $option_logfile
-# custom_print $INIT_MESSAGE >> $option_logfile
-
-#read_key $input_config_file
-
-
 
 
 #  >>>>>>>>>>> 2. 读取参数  >>>>>>>>>>>
@@ -381,33 +357,31 @@ else
 fi
 
 
-
-
-#value=`read_key $input_config_file`
-#echo kafka.bootstrap-servers: $value
-
-
-#echo $APPDIR
-
-
-
-
 #  >>>>>>>>>>> 3. 设置参数  >>>>>>>>>>>
 
 info "配置开始写入..."
 
-write_configs_all
+if [ -d $output_config_file ];then
+    for f in `ls $output_config_file/*.yaml`; do
+        info "更新文件：$f ..."
+        write_configs_all $f
+        let output_file_num++
+        info "更新完成：$f"
+    done
+else
+    info "更新配置文件：$output_config_file ..."
+    write_configs_all
+    output_file_num=1
+    info "更新完成：$output_config_file"
+fi
 
 info "配置写入完成！"
 
 
 
-
-
-
 #  >>>>>>>>>>> 4. 结论  >>>>>>>>>>>
 
-stat_total=${#conf_values[@]}
+stat_total=$((${#conf_values[@]} * $output_file_num))
 info "配置修改完成，共配置替换 ${stat_total} 项，实际完成 ${stat_real} 项"
 info "------<结束>------"
 
