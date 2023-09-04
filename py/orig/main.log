@@ -1,0 +1,56 @@
+Tue, 15 Mar 2022 15:05:16 delegator.py[line:26] INFO ls -lht
+Tue, 15 Mar 2022 15:05:16 delegator.py[line:27] INFO 0
+Tue, 15 Mar 2022 15:05:16 delegator.py[line:28] INFO total 3408
+-rw-r--r--   1 zhanghui  staff     0B  3 15 15:05 main.log
+drwxr-xr-x   5 zhanghui  staff   160B  3 15 15:05 __pycache__
+drwxr-xr-x   5 zhanghui  staff   160B  3 15 15:04 encrypt
+drwxr-xr-x  36 zhanghui  staff   1.1K  3 15 15:03 orig
+drwxr-xr-x   6 zhanghui  staff   192B  3 15 15:02 db
+drwxr-xr-x  18 zhanghui  staff   576B  3 15 15:00 quant
+drwxr-xr-x   2 zhanghui  staff    64B  3 15 15:00 ccxt
+drwxr-xr-x   6 zhanghui  staff   192B  3  9 15:51 logger
+drwxr-xr-x   7 zhanghui  staff   224B  2  8 17:07 thread
+drwxr-xr-x   5 zhanghui  staff   160B  1 30 09:46 apollo
+drwxr-xr-x   6 zhanghui  staff   192B  1 25 10:27 prompt
+drwxr-xr-x   5 zhanghui  staff   160B  1 10 18:14 select
+drwxr-xr-x   3 zhanghui  staff    96B 12 29 15:29 io
+drwxr-xr-x  23 zhanghui  staff   736B 12 29 15:28 async
+drwxr-xr-x   8 zhanghui  staff   256B 12 27 19:39 s3
+drwxr-xr-x  20 zhanghui  staff   640B 12 23 13:57 flask
+drwxr-xr-x   4 zhanghui  staff   128B 12  2 10:47 tool
+drwxr-xr-x   5 zhanghui  staff   160B 11 26 14:30 iter
+drwxr-xr-x   8 zhanghui  staff   256B 11 12 10:26 wecash
+-rw-r--r--   1 zhanghui  staff   645B 11  2 15:07 queue-1.py
+drwxr-xr-x   6 zhanghui  staff   192B 10 20 15:06 wechat
+-rw-r--r--   1 zhanghui  staff   809B  4 16  2021 xirr2.py
+-rw-r--r--   1 zhanghui  staff   600B  4 16  2021 xirr.py
+drwxr-xr-x   4 zhanghui  staff   128B  8 29  2020 spider
+drwxr-xr-x   9 zhanghui  staff   288B  8 29  2020 schedule
+drwxr-xr-x   4 zhanghui  staff   128B  8 29  2020 rpc
+drwxr-xr-x  17 zhanghui  staff   544B  8 29  2020 mq
+drwxr-xr-x   7 zhanghui  staff   224B  8 29  2020 lambda
+drwxr-xr-x   7 zhanghui  staff   224B  8 29  2020 keccak-python
+drwxr-xr-x   5 zhanghui  staff   160B  8 29  2020 dag
+drwxr-xr-x  23 zhanghui  staff   736B  8 29  2020 cython
+drwxr-xr-x   8 zhanghui  staff   256B  8 29  2020 config
+drwxr-xr-x   9 zhanghui  staff   288B  8 29  2020 boost-python
+drwxr-xr-x   2 zhanghui  staff    64B  8 10  2020 opencv
+drwxr-xr-x   5 zhanghui  staff   160B  6 22  2020 jsonp
+-rw-r--r--   1 zhanghui  staff   583B  6 22  2020 inspect1.py
+-rw-r--r--   1 zhanghui  staff   1.6M  6 22  2020 get-pip.py
+-rw-r--r--   1 zhanghui  staff   1.4K  6 22  2020 delegator.pyc
+-rw-r--r--   1 zhanghui  staff   1.4K  6 22  2020 delegator.py
+-rw-r--r--   1 zhanghui  staff   539B  6 22  2020 decorator1.py
+-rw-r--r--   1 zhanghui  staff   176B  6 22  2020 decorator.py
+
+Tue, 15 Mar 2022 15:05:16 delegator.py[line:34] ERROR [Errno 2] No such file or directory: 'ffprobe'
+Traceback (most recent call last):
+  File "/Users/zhanghui/Documents/workspace/experiment/py/delegator.py", line 32, in <module>
+    ffprobe = subprocess.run(shlex.split('ffprobe -show_streams -i rtmp://rtmp-push.source.test/live/i3jMugm01'), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=False, universal_newlines=True, cwd = '/usr/local/bin', timeout = 3)
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/subprocess.py", line 505, in run
+    with Popen(*popenargs, **kwargs) as process:
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/subprocess.py", line 951, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/subprocess.py", line 1821, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'

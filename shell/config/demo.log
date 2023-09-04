@@ -1,0 +1,17 @@
+2023-08-09 15:00:33 [INFO] 未指定有效日志文件，默认：demo.log
+2023-08-09 15:00:33 [INFO] 未指定有效配置文件，默认：/Users/zhanghui/Documents/workspace/experiment/shell/config/config.yaml
+2023-08-09 15:00:33 [INFO] 未指定输出配置文件，默认：/Users/zhanghui/Documents/workspace/experiment/shell/config/output.yaml
+2023-08-09 15:00:33
+2023-08-09 15:00:33 [INFO] yaml解析工具存在，开始解析配置
+2023-08-09 15:00:34 [INFO] 配置读取完成
+2023-08-09 15:00:34 [INFO] 配置开始写入...
+2023-08-09 15:00:34 [INFO] 更新配置文件：/Users/zhanghui/Documents/workspace/experiment/shell/config/output.yaml ...
+2023-08-09 15:00:34 [INFO] 完成配置项：kafka/bootstrap-servers: * -> kafka/bootstrap-servers: 10.0.0.4:9092,10.0.0.5:9092,10.0.0.6:9092
+2023-08-09 15:00:34 [INFO] 完成配置项：redis/address: * -> redis/address: 10.0.0.4
+2023-08-09 15:00:34 [INFO] 完成配置项：address/port: * -> address/port: 6889
+2023-08-09 15:00:34 [INFO] 完成配置项：port/password: * -> port/password: wu2kku6d81nm
+2023-08-09 15:00:34 [INFO] 完成单配置项：(行首port: *) -> (port: 9002)
+2023-08-09 15:00:34 [INFO] 更新完成：/Users/zhanghui/Documents/workspace/experiment/shell/config/output.yaml
+2023-08-09 15:00:34 [INFO] 配置写入完成！
+2023-08-09 15:00:34 [INFO] 配置修改完成，共配置替换 5 项，实际完成 1 项
+2023-08-09 15:00:34 [INFO] ------<结束>------
