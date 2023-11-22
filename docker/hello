@@ -1,0 +1,4 @@
+FROM centos
+# 只是单纯的打印"hello world"
+RUN echo "hello world"
+

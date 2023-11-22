@@ -5,7 +5,8 @@ import itertools
 import sys
 import os
 home = os.getenv('HOME')
-sys.path.append(home + '/zjxl/tools')
+sys.path.append('../../tools')
+print(home)
 import zutil 
 
 class Apriori:
