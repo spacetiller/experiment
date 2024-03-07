@@ -1,0 +1,9 @@
+.env
+# only ignore the TODO file in the current directory, not subdir
+/target
+
+# ignore all files in any directory named xxx
+.ipynb_checkpoints/
+__pycache__/
+
+
