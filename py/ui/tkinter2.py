@@ -1,0 +1,10 @@
+import tkinter
+Mainform=tkinter.Tk()
+Mainform.geometry("250x150")
+btn1=tkinter.Button(Mainform,text="1",fg="black")
+btn2=tkinter.Button(Mainform,text="2",fg="black")
+btn3=tkinter.Button(Mainform,text="3",fg="black")
+btn3.pack(side="top")
+btn2.pack(side="top")
+btn1.pack(side="top")
+Mainform.mainloop()
