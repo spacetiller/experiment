@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cangjieDebugBuild",
+			"cmd": "D:\\programs\\cangjie\\bin\\cjc.exe",
+			"args": [
+				"-g",
+				"d:\\workspace\\experiment\\cangjie\\hello\\hello.cj",
+				"-o",
+				"d:\\workspace\\experiment\\cangjie\\hello\\hello.exe"
+			],
+			"label": "cangjieDebug build task - uAOw5YDnHS"
+		},
+		{
+			"type": "cangjieDebugBuild",
+			"cmd": "D:\\programs\\cangjie\\bin\\cjc.exe",
+			"args": [
+				"-g",
+				"d:\\workspace\\experiment\\cangjie\\hello\\test101.cj",
+				"-o",
+				"d:\\workspace\\experiment\\cangjie\\hello\\test101.exe"
+			],
+			"label": "cangjieDebug build task - SOqpLuncmW"
+		}
+	]
+}

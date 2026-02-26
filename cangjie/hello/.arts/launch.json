@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "name": "Cangjie: launch",
+            "request": "launch",
+            "type": "cangjieDebug",
+            "externalConsole": false,
+            "buildBeforeLaunch": true,
+            "env": {
+                "PATH": "D:\\programs\\cangjie\\runtime\\lib\\windows_x86_64_llvm"
+            },
+            "program": "d:\\workspace\\experiment\\cangjie\\hello\\target\\debug\\bin\\main.exe"
+        }
+    ]
+}

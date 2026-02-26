@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cangjie (CJNative): hello.exe",
+            "program": "d:\\workspace\\experiment\\cangjie\\hello\\hello.exe",
+            "request": "launch",
+            "type": "cangjieDebug",
+            "externalConsole": false,
+            "env": {},
+            "preLaunchTask": "cangjieDebug build task - uAOw5YDnHS"
+        },
+        {
+            "name": "Cangjie (CJNative): test101.exe",
+            "program": "d:\\workspace\\experiment\\cangjie\\hello\\test101.exe",
+            "request": "launch",
+            "type": "cangjieDebug",
+            "externalConsole": false,
+            "env": {},
+            "preLaunchTask": "cangjieDebug build task - SOqpLuncmW"
+        }
+    ]
+}

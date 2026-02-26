@@ -9,7 +9,7 @@ import queue
 server = socket.socket()
 server.setblocking(0)
 
-server_addr = ('localhost',10000)
+server_addr = ('localhost',10088)
 
 print('starting up on %s port %s' % server_addr)
 server.bind(server_addr)
